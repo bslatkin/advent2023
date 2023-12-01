@@ -1,0 +1,23 @@
+import "io"
+
+
+def handle-error (e)
+  if equal (error-value e) io.EOF then
+    return true ""
+    else
+    raise e
+
+
+def read-all (accumulated)
+  let eof value =
+    guard
+      handle-error
+      lambda: list false (input "")
+
+  if eof then
+    return list.reverse accumulated
+
+  return read-all (prepend value accumulated)
+
+
+export read-all

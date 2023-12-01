@@ -1,0 +1,37 @@
+"""
+On each line, the calibration value can be found by combining the first digit
+and the last digit (in that order) to form a single two-digit number.
+"""
+
+import "advent"
+import "string"
+
+
+def string-iter (the-string)
+  let indexes = range (strlen the-string)
+  let codepoints = map (lambda i: (substr the-string i (add i 1))) indexes
+  return codepoints
+
+
+def is-digit (codepoint)
+  let digits = list "0" "1" "2" "3" "4" "5" "6" "7" "8" "9"
+  let index = list.find digits codepoint
+  return not-equal index -1
+
+
+def handle-line (line)
+  let chars = string-iter line
+  let digits = filter is-digit chars
+  let first-digit = first digits
+  let last-digit = list.last digits
+  let combined = concat (list first-digit last-digit)
+  let number = string.string-to-integer combined
+  return number
+
+
+def main (args)
+  let data = advent.read-all nil
+  let values = map handle-line data
+  let result = sum values
+  print result
+  return 0
