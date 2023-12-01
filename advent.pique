@@ -8,7 +8,7 @@ def handle-error (e)
     raise e
 
 
-def read-all (accumulated)
+def read-all-helper (accumulated)
   let eof value =
     guard
       handle-error
@@ -17,7 +17,11 @@ def read-all (accumulated)
   if eof then
     return list.reverse accumulated
 
-  return read-all (prepend value accumulated)
+  return read-all-helper (prepend value accumulated)
+
+
+def read-all ()
+  return read-all-helper nil
 
 
 export read-all
