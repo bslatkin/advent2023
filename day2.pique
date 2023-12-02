@@ -6,24 +6,25 @@ green cubes, and 14 blue cubes. What is the sum of the IDs of those games?
 
 import "advent"
 import "dict"
-import "string"
 import "functional"
+import "string"
 
 
-def split-helper (line delimiter accumulated)
+def split-helper (line delimiter delimiter-length accumulated)
   let index = string.find line delimiter
   if equal index -1 then
     let final-accumulated = prepend line accumulated
     return list.reverse final-accumulated
 
   let piece = substr line 0 index
-  let next-line = substr line (add index (strlen delimiter)) (strlen line)
+  let next-line = substr line (add index delimiter-length) (strlen line)
   let next-accumulated = prepend piece accumulated
-  return split-helper next-line delimiter next-accumulated
+  return split-helper next-line delimiter delimiter-length next-accumulated
 
 
 def split (line delimiter)
-  return split-helper line delimiter nil
+  let delimiter-length = strlen delimiter
+  return split-helper line delimiter delimiter-length nil
 
 
 def parse-amount (line)
@@ -57,11 +58,7 @@ def parse-line (line)
   return list id cube-sets
 
 
-let MAXIMUMS =
-  dict.from
-    list "red" 12
-    list "green" 13
-    list "blue" 14
+let MAXIMUMS = dict.from (list "red" 12) (list "green" 13) (list "blue" 14)
 
 
 def check-amount (item)
@@ -73,9 +70,8 @@ def check-amount (item)
 
 
 def cube-set-valid (cube-set)
-  let amounts-valid = functional.map-iterators
-    check-amount
-    dict.iterator cube-set
+  let amounts-valid =
+    functional.map-iterators check-amount (dict.iterator cube-set)
   print "Amounts valid" amounts-valid
   return all amounts-valid
 
@@ -103,4 +99,3 @@ def main (args)
   let result = sum game-ids
   print result
   return 0
-
