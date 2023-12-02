@@ -83,9 +83,14 @@ def game-power (game)
       fold-cube-set
       cube-sets
       (dict.new)
+  let power =
+    functional.fold
+      mul
+      dict.values maximums
+      1
 
-  print "Game is" game "maxes are" maximums
-  return id
+  print "Game is" game "maxes are" maximums "power is" power
+  return power
 
 
 def handle-line (line)
@@ -96,9 +101,7 @@ def handle-line (line)
 
 def main (args)
   let data = (advent.read-all)
-  let game-ids = map handle-line data
-  # let game-ids = filter (lambda id: not-equal id nil) maybe-game-ids
-  # let result = sum game-ids
-  print game-ids
+  let powers = map handle-line data
+  let result = sum powers
+  print result
   return 0
-
