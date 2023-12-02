@@ -1,0 +1,104 @@
+"""
+Which games would have been possible if the bag contained only 12 red cubes, 13
+green cubes, and 14 blue cubes. What is the sum of the IDs of those games?
+"""
+
+
+import "advent"
+import "dict"
+import "string"
+import "functional"
+
+
+def split-helper (line delimiter accumulated)
+  let index = string.find line delimiter
+  if equal index -1 then
+    let final-accumulated = prepend line accumulated
+    return list.reverse final-accumulated
+
+  let piece = substr line 0 index
+  let next-line = substr line (add index (strlen delimiter)) (strlen line)
+  let next-accumulated = prepend piece accumulated
+  return split-helper next-line delimiter next-accumulated
+
+
+def split (line delimiter)
+  return split-helper line delimiter nil
+
+
+def parse-amount (line)
+  let number-text color = split line " "
+  let number = string.string-to-integer number-text
+  return list color number
+
+
+def parse-colors (line)
+  let colors-text = split line ", "
+  let amounts = map parse-amount colors-text
+  return dict.from-list amounts
+
+
+def parse-sets (line)
+  let sets-text = split line "; "
+  let cube-sets = map parse-colors sets-text
+  return cube-sets
+
+
+def parse-id (line)
+  let game-text after-id = split line ": "
+  let game-prefix id-text = split game-text " "
+  let id = string.string-to-integer id-text
+  return list id after-id
+
+
+def parse-line (line)
+  let id after-id = parse-id line
+  let cube-sets = parse-sets after-id
+  return list id cube-sets
+
+
+def fold-amount (maximums item)
+  print "Checking amount" item
+  let color amount = item
+  let previous-value = dict.get-or-default maximums color 0
+  let next-value = max previous-value amount
+  let next-maximums = dict.set maximums color next-value
+  return next-maximums
+
+
+def fold-cube-set (maximums cube-set)
+  let next-maximums =
+    functional.fold
+      fold-amount
+      dict.items cube-set
+      maximums
+  print "Cube set next maximums" next-maximums
+  return next-maximums
+
+
+def game-power (game)
+  let id cube-sets = game
+  let maximums =
+    functional.fold
+      fold-cube-set
+      cube-sets
+      (dict.new)
+
+  print "Game is" game "maxes are" maximums
+  return id
+
+
+def handle-line (line)
+  print "Handling" line
+  let game = parse-line line
+  return game-power game
+
+
+def main (args)
+  let data = (advent.read-all)
+  let game-ids = map handle-line data
+  # let game-ids = filter (lambda id: not-equal id nil) maybe-game-ids
+  # let result = sum game-ids
+  print game-ids
+  return 0
+
