@@ -10,44 +10,27 @@ import "functional"
 import "string"
 
 
-def split-helper (line delimiter delimiter-length accumulated)
-  let index = string.find line delimiter
-  if equal index -1 then
-    let final-accumulated = prepend line accumulated
-    return list.reverse final-accumulated
-
-  let piece = substr line 0 index
-  let next-line = substr line (add index delimiter-length) (strlen line)
-  let next-accumulated = prepend piece accumulated
-  return split-helper next-line delimiter delimiter-length next-accumulated
-
-
-def split (line delimiter)
-  let delimiter-length = strlen delimiter
-  return split-helper line delimiter delimiter-length nil
-
-
 def parse-amount (line)
-  let number-text color = split line " "
+  let number-text color = string.split line " "
   let number = string.string-to-integer number-text
   return list color number
 
 
 def parse-colors (line)
-  let colors-text = split line ", "
+  let colors-text = string.split line ", "
   let amounts = map parse-amount colors-text
   return dict.from-list amounts
 
 
 def parse-sets (line)
-  let sets-text = split line "; "
+  let sets-text = string.split line "; "
   let cube-sets = map parse-colors sets-text
   return cube-sets
 
 
 def parse-id (line)
-  let game-text after-id = split line ": "
-  let game-prefix id-text = split game-text " "
+  let game-text after-id = string.split line ": "
+  let game-prefix id-text = string.split game-text " "
   let id = string.string-to-integer id-text
   return list id after-id
 
