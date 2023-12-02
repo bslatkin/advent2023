@@ -8,72 +8,67 @@ valid "digits".
 """
 
 
-import "advent"
-import "string"
+  import "advent"
+  import "string"
 
 
-def prefix-iter (the-string)
-  let length = strlen the-string
-  let indexes = range length
-  let prefixes = map (lambda i: substr the-string i length) indexes
-  return prefixes
+  def prefix-iter (the-string)
+    let length = strlen the-string
+    let indexes = range length
+    let prefixes = map (lambda i: substr the-string i length) indexes
+    return prefixes
 
 
-
-let DIGITS = list "1" "2" "3" "4" "5" "6" "7" "8" "9"
-let NUMBERS = list "one" "two" "three" "four" "five" "six" "seven" "eight" "nine"
-
-
-def match-digit (prefix)
-  let codepoint = substr prefix 0 1
-  let index = list.find DIGITS codepoint
-  if equal index -1 then
-    return list false nil
-
-  return list true codepoint
+  let DIGITS = list "1" "2" "3" "4" "5" "6" "7" "8" "9"
+  let NUMBERS =
+    list "one" "two" "three" "four" "five" "six" "seven" "eight" "nine"
 
 
-def starts-with (the-string prefix)
-  let front = substr the-string 0 (strlen prefix)
-  return equal front prefix
+  def match-digit (prefix)
+    let codepoint = substr prefix 0 1
+    let index = list.find DIGITS codepoint
+    if equal index -1 then
+      return list false nil
+
+    return list true codepoint
 
 
-def match-text (prefix)
-  let matching = map (lambda s: starts-with prefix s) NUMBERS
-  let index = list.find matching true
-  if equal index -1 then
-    return list false nil
+  def match-text (prefix)
+    let matching = map (lambda s: string.starts-with prefix s) NUMBERS
+    let index = list.find matching true
+    if equal index -1 then
+      return list false nil
 
-  let digit = list.index DIGITS index
-  return list true digit
-
-
-def match-prefix (prefix)
-  let is-digit digit-value = match-digit prefix
-  if is-digit then
-    return digit-value
-
-  let is-text text-value = match-text prefix
-  if is-text then
-    return text-value
-
-  return nil
+    let digit = list.index DIGITS index
+    return list true digit
 
 
-def handle-line (line)
-  let prefixes = prefix-iter line
-  let maybe-matches = map match-prefix prefixes
-  let numbers = filter (lambda x: not-equal x nil) maybe-matches
-  let first-number = first numbers
-  let last-number = list.last numbers
-  let combined = concat (list first-number last-number)
-  let number = string.string-to-integer combined
-  return number
+  def match-prefix (prefix)
+    let is-digit digit-value = match-digit prefix
+    if is-digit then
+      return digit-value
+
+    let is-text text-value = match-text prefix
+    if is-text then
+      return text-value
+
+    return nil
 
 
-def main (args)
-  let data = advent.read-all nil
-  let values = map handle-line data
-  let result = sum values
-  print result
-  return 0
+  def handle-line (line)
+    let prefixes = prefix-iter line
+    let maybe-matches = map match-prefix prefixes
+    let numbers = filter (lambda x: not-equal x nil) maybe-matches
+    let first-number = first numbers
+    let last-number = list.last numbers
+    let combined = concat (list first-number last-number)
+    let number = string.string-to-integer combined
+    return number
+
+
+  def main (args)
+    let data = (advent.read-all)
+    let values = map handle-line data
+    let result = sum values
+    print result
+    return 0
