@@ -1,6 +1,7 @@
 """
-Which games would have been possible if the bag contained only 12 red cubes, 13
-green cubes, and 14 blue cubes. What is the sum of the IDs of those games?
+what is the fewest number of cubes of each color that could have been in the bag
+to make the game possible? The power of a set of cubes is equal to the numbers
+of red, green, and blue cubes multiplied together.
 """
 
 
