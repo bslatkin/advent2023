@@ -5,6 +5,7 @@ green cubes, and 14 blue cubes. What is the sum of the IDs of those games?
 
 
 import "advent"
+import "dict"
 import "string"
 import "functional"
 
@@ -26,7 +27,6 @@ def split (line delimiter)
 
 
 def parse-amount (line)
-  print "Looking at amount" line
   let number-text color = split line " "
   let number = string.string-to-integer number-text
   return list color number
@@ -65,9 +65,10 @@ let MAXIMUMS =
 
 
 def check-amount (item)
+  print "Checking amount" item
   let color amount = item
   let max = dict.get-or-default MAXIMUMS color 0
-  print "Checking" color amount "against max" max
+  print "Comparing" color amount "against max" max
   return less-equal amount max
 
 
@@ -81,6 +82,7 @@ def cube-set-valid (cube-set)
 
 def game-valid (game)
   let id cube-sets = game
+  print "Game is" game
   let sets-valid = map cube-set-valid cube-sets
   if all sets-valid then
     return id
@@ -89,6 +91,7 @@ def game-valid (game)
 
 
 def handle-line (line)
+  print "Handling" line
   let game = parse-line line
   return game-valid game
 
