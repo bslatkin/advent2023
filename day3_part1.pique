@@ -5,10 +5,35 @@ green cubes, and 14 blue cubes. What is the sum of the IDs of those games?
 
 
 import "advent"
+import "comparison"
 import "dict"
 import "functional"
 import "list"
 import "string"
+import "tree"
+
+
+def fast-dict-compare (a b)
+  let a-key a-value = a
+  let b-key b-value = b
+  return comparison.compare-any a-key b-key
+
+
+def fast-dict-from-list (items)
+  return
+    tree.update-from-list-with-compare
+      fast-dict-compare
+      (tree.new)
+      items
+
+
+def fast-dict-get-or-default (collection key default-value)
+  return
+    guard
+      lambda e: default-value
+      lambda:
+        list.second
+          tree.get-with-compare fast-dict-compare collection (list key nil)
 
 
 def offset-coords (coords delta-x delta-y)
@@ -48,7 +73,7 @@ def parse-schematic-line (y line)
 def make-schematic (data)
   let assignments = functional.map-index parse-schematic-line data
   let flattened = list.extend-lists assignments
-  let schematic = dict.from-list flattened
+  let schematic = fast-dict-from-list flattened
   return schematic
 
 
@@ -113,7 +138,7 @@ def make-parts (data)
 
 
 def is-symbol (schematic coords)
-  let value = dict.get-or-default schematic coords nil
+  let value = fast-dict-get-or-default schematic coords nil
   if equal value nil then
     # Out of bounds coordinates
     return false
