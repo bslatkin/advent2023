@@ -30,8 +30,30 @@ def matrix-from-list (rows)
       data = dict.from-list (rectangular-items rows)
 
 
-def matrix-get (matrix coords)
-  return dict.get (matrix-data matrix) coords
+def adjusted-rows (collection)
+  if matrix-transposed collection then
+    return matrix-columns collection
+    else
+    return matrix-rows collection
+
+
+def adjusted-columns (collection)
+  if matrix-transposed collection then
+    return matrix-rows collection
+    else
+    return matrix-columns collection
+
+
+def adjusted-coords (collection coords)
+  if matrix-transposed collection then
+    return list.reverse coords
+    else
+    return coords
+
+
+def matrix-get (collection coords)
+  let adjusted = adjusted-coords collection coords
+  return dict.get (matrix-data collection) adjusted
 
 
 def row-coordinates (row-index column-count)
@@ -63,10 +85,10 @@ def all-coords (row-count column-count)
 
 
 def matmul (left right)
-  let left-row-count = matrix-rows left
-  let left-column-count = matrix-columns left
-  let right-row-count = matrix-rows right
-  let right-column-count = matrix-columns right
+  let left-row-count = adjusted-rows left
+  let left-column-count = adjusted-columns left
+  let right-row-count = adjusted-rows right
+  let right-column-count = adjusted-columns right
 
   if not-equal left-column-count right-row-count then
     raise "Matrices aren't compatible shapes"
@@ -94,6 +116,11 @@ def matmul (left right)
       data = dict.from-list assignments
 
 
+def matrix-transpose (collection)
+  let next-transposed = not (matrix-transposed collection)
+  return matrix-set-transposed collection next-transposed
+
+
 def main (args)
   let a = matrix-from-list (list (list 1 2) (list 3 4))
   print a
@@ -106,4 +133,8 @@ def main (args)
   print b
   let c = matmul a b
   print c
+  let d = matrix-transpose b
+  print d
+  let e = matmul a d
+  print e
   return 0
