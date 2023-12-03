@@ -1,14 +1,9 @@
-"""
-Which games would have been possible if the bag contained only 12 red cubes, 13
-green cubes, and 14 blue cubes. What is the sum of the IDs of those games?
-"""
-
-
 import "advent"
 import "comparison"
 import "dict"
 import "functional"
 import "list"
+import "set"
 import "string"
 import "tree"
 
@@ -27,6 +22,15 @@ def fast-dict-from-list (items)
       items
 
 
+def fast-dict-new ()
+  return (tree.new)
+
+
+def fast-dict-set (collection key value)
+  let item = list key value
+  return tree.add-with-compare fast-dict-compare collection item
+
+
 def fast-dict-get-or-default (collection key default-value)
   return
     guard
@@ -36,13 +40,16 @@ def fast-dict-get-or-default (collection key default-value)
           tree.get-with-compare fast-dict-compare collection (list key nil)
 
 
+def fast-dict-iterator (collection)
+  return tree.iterator collection
+
+
 def offset-coords (coords delta-x delta-y)
   let x y = coords
   return list (add x delta-x) (add y delta-y)
 
 
 def neighbors (coords)
-  print "neighbors for" coords
   let north = offset-coords coords 0 1
   let north-east = offset-coords coords 1 1
   let east = offset-coords coords 1 0
@@ -53,8 +60,6 @@ def neighbors (coords)
   let north-west = offset-coords coords -1 1
   return
     list north north-east east south-east south south-west west north-west
-
-
 
 
 def parse-schematic-line (y line)
@@ -125,7 +130,6 @@ def save-parts (state tuple)
 
 
 def parse-part-line (y line)
-  print "Handling part line" y
   # Make sure all lines end with non-digit so the fold below can complete
   let tuples = parse-schematic-line y (concat (list line "."))
   let start-state = list nil "" nil
@@ -133,44 +137,58 @@ def parse-part-line (y line)
   return first final-state
 
 
+def index-part (parts-dict part)
+  return
+    functional.fold
+      lambda state coords: fast-dict-set state coords part
+      part-coords part
+      parts-dict
+
+
 def make-parts (data)
-  return functional.map-index parse-part-line data
+  let part-lines = functional.map-index parse-part-line data
+  let flattened = list.extend-lists part-lines
+  let parts-dict = functional.fold index-part flattened (fast-dict-new)
+  return parts-dict
 
 
-def is-symbol (schematic coords)
-  let value = fast-dict-get-or-default schematic coords nil
-  if equal value nil then
-    # Out of bounds coordinates
-    return false
+def check-gear (parts position)
+  let gear-coords gear-value = position
+  if not-equal gear-value "*" then
+    return nil
 
-  if is-digit value then
-    return false
+  let neighbor-coords = neighbors gear-coords
+  let maybe-parts =
+    map
+      lambda coords: fast-dict-get-or-default parts coords nil
+      neighbor-coords
+  let matching = filter bool maybe-parts
+  let unique = set.values (set.from-list matching)
 
-  if equal value "." then
-    return false
+  print "Matching gears are" unique
+  if not-equal (list.length unique) 2 then
+    return 0
 
-  return true
+  let gear1 gear2 = unique
+  let result = mul (part-number gear1) (part-number gear2)
+  print "Result is" result
+  return result
 
 
-def is-part-included (schematic part)
-  print "part is" part
-  let all-coords = map neighbors (part-coords part)
-  print "All coords" all-coords
-  let flattened = list.extend-lists all-coords
-  print "Flattened is" flattened
-  let symbols = map (functional.partial is-symbol schematic) flattened
-  return list.any symbols
+def find-gears (schematic parts)
+  let maybe-gear-parts =
+    functional.map-iterators
+      functional.partial check-gear parts
+      fast-dict-iterator schematic
+  let gears-multiplied = filter bool maybe-gear-parts
+  return gears-multiplied
 
 
 def main (args)
   let data = (advent.read-all)
   let schematic = make-schematic data
-  print "Parsed schematic"
   let parts = make-parts data
-  print "Parsed parts"
-  let flattened = list.extend-lists parts
-  let included = filter (functional.partial is-part-included schematic) flattened
-  let part-numbers = map part-number included
-  let total = sum part-numbers
+  let gears-multiplied = find-gears schematic parts
+  let total = sum gears-multiplied
   print total
   return 0
