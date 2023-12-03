@@ -1,0 +1,36 @@
+import "struct"
+import "functional"
+
+
+struct matrix (shape transposed data)
+
+
+def matrix-from-list (rows)
+  let rows-count = list.length rows
+  let columns-count = list.length (first rows)
+  let items =
+    functional.map-index
+      lambda row-i row:
+        functional.map-index
+          lambda column-j value: list (list row-i column-j) value
+          row
+      rows
+  let data-dict = dict.from-list items
+  let result =
+    matrix
+      shape = list rows-count columns-count
+      transposed = false
+      data = data-dict
+  return result
+
+# def get (matrix row column)
+
+
+
+# def matmul (a b)
+
+
+def main (args)
+  let my-matrix = matrix-from-list (list (list 1 2) (list 3 4))
+  print my-matrix
+  return 0
