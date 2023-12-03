@@ -33,6 +33,7 @@ def neighbors (schematic coords)
 
 
 def parse-schematic-line (y line)
+  print "Handling schematic line" y
   let indexes = range (strlen line)
   let tuples =
     map
@@ -99,6 +100,7 @@ def save-parts (state tuple)
 
 
 def parse-part-line (y line)
+  print "Handling part line" y
   # Make sure all lines end with non-digit so the fold below can complete
   let tuples = parse-schematic-line y (concat (list line "."))
   let start-state = list nil "" nil
@@ -138,12 +140,11 @@ def is-part-included (schematic part)
 def main (args)
   let data = (advent.read-all)
   let schematic = make-schematic data
+  print "Parsed schematic"
   let parts = make-parts data
-  print parts
+  print "Parsed parts"
   let flattened = list.extend-lists parts
-  print flattened
   let included = filter (functional.partial is-part-included schematic) flattened
-  print "Included" included
   let part-numbers = map part-number included
   let total = sum part-numbers
   print total
