@@ -11,7 +11,28 @@ import "list"
 import "string"
 
 
-def parse-line (y line)
+def offset-coords (coords delta-x delta-y)
+  let x y = coords
+  return list (add x delta-x) (add y delta-y)
+
+
+def neighbors (schematic coords)
+  print "neighbors for" coords
+  let north = offset-coords coords 0 1
+  let north-east = offset-coords coords 1 1
+  let east = offset-coords coords 1 0
+  let south-east = offset-coords coords 1 -1
+  let south = offset-coords coords 0 -1
+  let south-west = offset-coords coords -1 -1
+  let west = offset-coords coords -1 0
+  let north-west = offset-coords coords -1 1
+  return
+    list north north-east east south-east south south-west west north-west
+
+
+
+
+def parse-schematic-line (y line)
   let indexes = range (strlen line)
   let tuples =
     map
@@ -23,10 +44,107 @@ def parse-line (y line)
   return tuples
 
 
+def make-schematic (data)
+  let assignments = functional.map-index parse-schematic-line data
+  let flattened = list.extend-lists assignments
+  let schematic = dict.from-list flattened
+  return schematic
+
+
+def string-codepoints (the-string)
+  let indexes = range (strlen the-string)
+  let codepoints =
+    map
+      lambda i: substr the-string i (add i 1)
+      indexes
+  return codepoints
+
+
+let DIGITS = list "0" "1" "2" "3" "4" "5" "6" "7" "8" "9"
+
+
+def is-digit (codepoint)
+  let index = list.find DIGITS codepoint
+  return not-equal index -1
+
+
+struct part (number coords)
+
+
+def save-parts (state tuple)
+  let part-list numbers coords = state
+  let current-coords current-codepoint = tuple
+
+  # Digit is the start of a new part number or continuation of one
+  if is-digit current-codepoint then
+    return
+      list
+        part-list
+        concat (list numbers current-codepoint)
+        prepend current-coords coords
+
+  # Non-digit is the end of a part if there's progress
+  if numbers then
+    let new-part =
+      part
+        number = string.string-to-integer numbers
+        coords = coords
+    return
+      list
+        prepend new-part part-list
+        ""
+        nil
+
+  return state
+
+
+def parse-part-line (y line)
+  # Make sure all lines end with non-digit so the fold below can complete
+  let tuples = parse-schematic-line y (concat (list line "."))
+  let start-state = list nil "" nil
+  let final-state = functional.fold save-parts tuples start-state
+  return first final-state
+
+
+def make-parts (data)
+  return functional.map-index parse-part-line data
+
+
+def is-symbol (schematic coords)
+  let value = dict.get-or-default schematic coords nil
+  if equal value nil then
+    # Out of bounds coordinates
+    return false
+
+  if is-digit value then
+    return false
+
+  if equal value "." then
+    return false
+
+  return true
+
+
+def is-part-included (schematic part)
+  print "part is" part
+  let all-coords = map (functional.partial neighbors schematic) (part-coords part)
+  print "All coords" all-coords
+  let flattened = list.extend-lists all-coords
+  print "Flattened is" flattened
+  let symbols = map (functional.partial is-symbol schematic) flattened
+  return list.any symbols
+
+
 def main (args)
   let data = (advent.read-all)
-  let assignments = functional.map-index parse-line data
-  let flattened = list.extend-lists assignments
-  let map = dict.from-list flattened
-  print map
+  let schematic = make-schematic data
+  let parts = make-parts data
+  print parts
+  let flattened = list.extend-lists parts
+  print flattened
+  let included = filter (functional.partial is-part-included schematic) flattened
+  print "Included" included
+  let part-numbers = map part-number included
+  let total = sum part-numbers
+  print total
   return 0
