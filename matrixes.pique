@@ -3,12 +3,10 @@ import "functional"
 import "list"
 
 
-struct matrix (shape transposed data)
+struct matrix (rows columns transposed data)
 
 
-def matrix-from-list (rows)
-  let rows-count = list.length rows
-  let columns-count = list.length (first rows)
+def rectangular-items (rows)
   let items =
     functional.map-index
       lambda row-i row:
@@ -17,29 +15,95 @@ def matrix-from-list (rows)
           row
       rows
   let flat-items = list.extend-lists items
-  let data-dict = dict.from-list flat-items
-  let result =
+  return flat-items
+
+
+def matrix-from-list (rows)
+  if not rows then
+    raise "Must have at least one row"
+
+  return
     matrix
-      shape = list rows-count columns-count
+      rows = list.length rows
+      columns = list.length (first rows)
       transposed = false
-      data = data-dict
-  return result
+      data = dict.from-list (rectangular-items rows)
 
 
-def matrix-get (matrix row column)
-  let key = list row column
-  print "data is" (matrix-data matrix)
-  let value = dict.get (matrix-data matrix) key
-  return value
+def matrix-get (matrix coords)
+  return dict.get (matrix-data matrix) coords
 
 
+def row-coordinates (row-index column-count)
+  return
+    map
+      lambda column-i: list row-index column-i
+      range column-count
 
-# def matmul (a b)
+
+def column-coordinates (row-count column-index)
+  return
+    map
+      lambda row-i: list row-i column-index
+      range row-count
+
+
+def all-coords (row-count column-count)
+  let rows = range row-count
+  let columns = range column-count
+  let coords =
+    map
+      lambda row-i:
+        map
+          lambda column-j: list row-i column-j
+          columns
+      rows
+  let flattened = list.extend-lists coords
+  return flattened
+
+
+def matmul (left right)
+  let left-row-count = matrix-rows left
+  let left-column-count = matrix-columns left
+  let right-row-count = matrix-rows right
+  let right-column-count = matrix-columns right
+
+  if not-equal left-column-count right-row-count then
+    raise "Matrices aren't compatible shapes"
+
+  let get-left = functional.partial matrix-get left
+  let get-right = functional.partial matrix-get right
+
+  def compute-element (coord)
+    let row-i column-j = coord
+    let row-coords = row-coordinates row-i left-column-count
+    let column-coords = column-coordinates right-row-count column-j
+    let row-values = map get-left row-coords
+    let column-values = map get-right column-coords
+    let multiplied = map mul row-values column-values
+    let total = sum multiplied
+    return list coord total
+
+  let result-coords = all-coords left-row-count right-column-count
+  let assignments = map compute-element result-coords
+  return
+    matrix
+      rows = left-row-count
+      columns = right-column-count
+      transposed = false
+      data = dict.from-list assignments
 
 
 def main (args)
-  let my-matrix = matrix-from-list (list (list 1 2) (list 3 4))
-  print my-matrix
-  let a = matrix-get my-matrix 1 0
+  let a = matrix-from-list (list (list 1 2) (list 3 4))
   print a
+  print
+    matrix-get a (list 0 0)
+    matrix-get a (list 0 1)
+    matrix-get a (list 1 0)
+    matrix-get a (list 1 1)
+  let b = matrix-from-list (list (list 5 6) (list 7 8))
+  print b
+  let c = matmul a b
+  print c
   return 0
