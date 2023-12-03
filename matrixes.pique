@@ -121,6 +121,21 @@ def matrix-transpose (collection)
   return matrix-set-transposed collection next-transposed
 
 
+def vector (row)
+  let surround = list row
+  return
+    matrix
+      rows = 1
+      columns = list.length row
+      transposed = false
+      data = dict.from-list (rectangular-items surround)
+
+
+def dot-product (left right)
+  let right-t = matrix-transpose right
+  return matmul left right-t
+
+
 def main (args)
   let a = matrix-from-list (list (list 1 2) (list 3 4))
   print a
@@ -137,4 +152,10 @@ def main (args)
   print d
   let e = matmul a d
   print e
+
+  let v1 = vector (list 1 2 3)
+  let v2 = vector (list 4 5 6)
+  let dot = dot-product v1 v2
+  print v1 v2 dot
+
   return 0
