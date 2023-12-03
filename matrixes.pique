@@ -1,5 +1,6 @@
 import "struct"
 import "functional"
+import "list"
 
 
 struct matrix (shape transposed data)
@@ -15,7 +16,8 @@ def matrix-from-list (rows)
           lambda column-j value: list (list row-i column-j) value
           row
       rows
-  let data-dict = dict.from-list items
+  let flat-items = list.extend-lists items
+  let data-dict = dict.from-list flat-items
   let result =
     matrix
       shape = list rows-count columns-count
@@ -23,7 +25,12 @@ def matrix-from-list (rows)
       data = data-dict
   return result
 
-# def get (matrix row column)
+
+def matrix-get (matrix row column)
+  let key = list row column
+  print "data is" (matrix-data matrix)
+  let value = dict.get (matrix-data matrix) key
+  return value
 
 
 
@@ -33,4 +40,6 @@ def matrix-from-list (rows)
 def main (args)
   let my-matrix = matrix-from-list (list (list 1 2) (list 3 4))
   print my-matrix
+  let a = matrix-get my-matrix 1 0
+  print a
   return 0
