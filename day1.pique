@@ -39,5 +39,3 @@ def main (args)
   let result = sum values
   print result
   return 0
-
-

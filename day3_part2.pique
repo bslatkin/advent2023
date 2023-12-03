@@ -15,11 +15,7 @@ def fast-dict-compare (a b)
 
 
 def fast-dict-from-list (items)
-  return
-    tree.update-from-list-with-compare
-      fast-dict-compare
-      (tree.new)
-      items
+  return tree.update-from-list-with-compare fast-dict-compare (tree.new) items
 
 
 def fast-dict-new ()
@@ -58,8 +54,7 @@ def neighbors (coords)
   let south-west = offset-coords coords -1 -1
   let west = offset-coords coords -1 0
   let north-west = offset-coords coords -1 1
-  return
-    list north north-east east south-east south south-west west north-west
+  return list north north-east east south-east south south-west west north-west
 
 
 def parse-schematic-line (y line)
@@ -117,21 +112,18 @@ def save-parts (state tuple)
   # Non-digit is the end of a part if there's progress
   if numbers then
     let new-part =
-      part
-        number = string.string-to-integer numbers
-        coords = coords
-    return
-      list
-        prepend new-part part-list
-        ""
-        nil
+      part (number = string.string-to-integer numbers) (coords = coords)
+    return list (prepend new-part part-list) "" nil
 
   return state
 
 
 def parse-part-line (y line)
   # Make sure all lines end with non-digit so the fold below can complete
-  let tuples = parse-schematic-line y (concat (list line "."))
+  let tuples =
+    parse-schematic-line
+      y
+      concat (list line ".")
   let start-state = list nil "" nil
   let final-state = functional.fold save-parts tuples start-state
   return first final-state

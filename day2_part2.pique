@@ -7,8 +7,8 @@ of red, green, and blue cubes multiplied together.
 
 import "advent"
 import "dict"
-import "string"
 import "functional"
+import "string"
 
 
 def split-helper (line delimiter accumulated)
@@ -18,7 +18,11 @@ def split-helper (line delimiter accumulated)
     return list.reverse final-accumulated
 
   let piece = substr line 0 index
-  let next-line = substr line (add index (strlen delimiter)) (strlen line)
+  let next-line =
+    substr
+      line
+      add index (strlen delimiter)
+      strlen line
   let next-accumulated = prepend piece accumulated
   return split-helper next-line delimiter next-accumulated
 
@@ -69,26 +73,15 @@ def fold-amount (maximums item)
 
 def fold-cube-set (maximums cube-set)
   let next-maximums =
-    functional.fold
-      fold-amount
-      dict.items cube-set
-      maximums
+    functional.fold fold-amount (dict.items cube-set) maximums
   print "Cube set next maximums" next-maximums
   return next-maximums
 
 
 def game-power (game)
   let id cube-sets = game
-  let maximums =
-    functional.fold
-      fold-cube-set
-      cube-sets
-      (dict.new)
-  let power =
-    functional.fold
-      mul
-      dict.values maximums
-      1
+  let maximums = functional.fold fold-cube-set cube-sets (dict.new)
+  let power = functional.fold mul (dict.values maximums) 1
 
   print "Game is" game "maxes are" maximums "power is" power
   return power

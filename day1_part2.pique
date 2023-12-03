@@ -7,10 +7,8 @@ one, two, three, four, five, six, seven, eight, and nine also count as
 valid "digits".
 """
 
-
   import "advent"
   import "string"
-
 
   def prefix-iter (the-string)
     let length = strlen the-string
@@ -18,11 +16,9 @@ valid "digits".
     let prefixes = map (lambda i: substr the-string i length) indexes
     return prefixes
 
-
   let DIGITS = list "1" "2" "3" "4" "5" "6" "7" "8" "9"
   let NUMBERS =
     list "one" "two" "three" "four" "five" "six" "seven" "eight" "nine"
-
 
   def match-digit (prefix)
     let codepoint = substr prefix 0 1
@@ -32,7 +28,6 @@ valid "digits".
 
     return list true codepoint
 
-
   def match-text (prefix)
     let matching = map (lambda s: string.starts-with prefix s) NUMBERS
     let index = list.find matching true
@@ -41,7 +36,6 @@ valid "digits".
 
     let digit = list.index DIGITS index
     return list true digit
-
 
   def match-prefix (prefix)
     let is-digit digit-value = match-digit prefix
@@ -54,7 +48,6 @@ valid "digits".
 
     return nil
 
-
   def handle-line (line)
     let prefixes = prefix-iter line
     let maybe-matches = map match-prefix prefixes
@@ -64,7 +57,6 @@ valid "digits".
     let combined = concat (list first-number last-number)
     let number = string.string-to-integer combined
     return number
-
 
   def main (args)
     let data = (advent.read-all)
