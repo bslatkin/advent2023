@@ -1,9 +1,9 @@
-
-import-all "advent"
+import "advent"
 import "dict"
 import "functional"
 import "list"
 import "set"
+import "sort"
 import "string"
 
 
@@ -47,13 +47,17 @@ def handle-line (line)
   return list card-number wins
 
 
-def additional-wins (card-index card-number)
+def additional-wins (card-index extra-index card-number)
+  let extra-count = dict.get-or-default extra-index card-number nil
+  if not-equal extra-count nil then
+    return extra-count
+
   # Instructions say the card number will never be out of range, but this
   # isn't true for the tiny test data.
   let wins = dict.get-or-default card-index card-number 0
 
   if not wins then
-    return nil
+    return 0
 
   let extra-card-numbers =
     map
@@ -63,36 +67,52 @@ def additional-wins (card-index card-number)
   print "extra cards from" card-number "with" wins "wins:" extra-card-numbers
 
   if not extra-card-numbers then
-    return nil
+    return 0
 
   let transitive-extra-cards =
     map
-      functional.partial additional-wins card-index
+      functional.partial additional-wins card-index extra-index
       extra-card-numbers
 
   print "transitive cards from" card-number "with" wins "wins:" transitive-extra-cards
 
-  if not transitive-extra-cards then
-    return extra-card-numbers
+  let extra-card-count = list.length extra-card-numbers
 
-  let flattened = list.extend-lists transitive-extra-cards
-  let all-cards = list.extend extra-card-numbers flattened
-  return all-cards
+  if not transitive-extra-cards then
+    return extra-card-count
+
+  let flattened-count = sum transitive-extra-cards
+  let all-cards-count = add extra-card-count flattened-count
+  return all-cards-count
+
+
+def fold-wins (card-index extra-index card-number)
+  let card-wins = additional-wins card-index extra-index card-number
+  let next-extra-index = dict.set extra-index card-number card-wins
+  return next-extra-index
+
 
 
 def main (args)
-  let data = (read-all)
+  let data = (advent.read-all)
   let card-scores = map handle-line data
   let card-index = dict.from-list card-scores
 
-  let extra-cards =
-    map
-      functional.partial additional-wins card-index
-      dict.keys card-index
-  let flattened = list.extend-lists extra-cards
-  print flattened
-  let extra = list.length flattened
+  # Count this in reverse order, and then cache already calculated
+  # values so later look-ups will find the precomputed answer instead of
+  # having to do it again? Dynamic programming type of solution.
+  let sorted-cards = sort.sort-with-compare sort.descending (dict.keys card-index)
+
+  let extra-cards-count =
+    functional.fold
+      functional.partial fold-wins card-index
+      sorted-cards
+      (dict.new)
+
+  print extra-cards-count
+
+  let total-extra = sum (dict.values extra-cards-count)
   let original = dict.size card-index
-  let total = add original extra
+  let total = add original total-extra
   print total
   return 0

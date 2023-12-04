@@ -1,3 +1,5 @@
+import "comparison"
+import "list"
 import "io"
 import "tree"
 
@@ -25,23 +27,38 @@ def read-all ()
   return read-all-helper nil
 
 
+export read-all
+
+
 def fast-dict-compare (a b)
   let a-key a-value = a
   let b-key b-value = b
   return comparison.compare-any a-key b-key
 
 
+export fast-dict-compare
+
+
 def fast-dict-from-list (items)
   return tree.update-from-list-with-compare fast-dict-compare (tree.new) items
+
+
+export fast-dict-from-list
 
 
 def fast-dict-new ()
   return (tree.new)
 
 
+export fast-dict-new
+
+
 def fast-dict-set (collection key value)
   let item = list key value
   return tree.add-with-compare fast-dict-compare collection item
+
+
+export fast-dict-set
 
 
 def fast-dict-get-or-default (collection key default-value)
@@ -53,8 +70,11 @@ def fast-dict-get-or-default (collection key default-value)
           tree.get-with-compare fast-dict-compare collection (list key nil)
 
 
+export fast-dict-get-or-default
+
+
 def fast-dict-iterator (collection)
   return tree.iterator collection
 
 
-(export-all)
+export fast-dict-iterator
