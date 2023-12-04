@@ -16,14 +16,8 @@ def parse-card (card)
 
 def parse-numbers (line)
   let numbers-text = string.split line " "
-  let numbers =
-    map
-      string.string-to-integer
-      numbers-text
-  let filtered =
-    filter
-      lambda x: not-equal x nil
-      numbers
+  let numbers = map string.string-to-integer numbers-text
+  let filtered = filter (lambda x: not-equal x nil) numbers
   print "numbers are" filtered
   let numbers-set = set.from-list filtered
   print "numbers" numbers-set
@@ -74,7 +68,13 @@ def additional-wins (card-index extra-index card-number)
       functional.partial additional-wins card-index extra-index
       extra-card-numbers
 
-  print "transitive cards from" card-number "with" wins "wins:" transitive-extra-cards
+  print
+    "transitive cards from"
+    card-number
+    "with"
+    wins
+    "wins:"
+    transitive-extra-cards
 
   let extra-card-count = list.length extra-card-numbers
 
@@ -92,7 +92,6 @@ def fold-wins (card-index extra-index card-number)
   return next-extra-index
 
 
-
 def main (args)
   let data = (advent.read-all)
   let card-scores = map handle-line data
@@ -101,7 +100,8 @@ def main (args)
   # Count this in reverse order, and then cache already calculated
   # values so later look-ups will find the precomputed answer instead of
   # having to do it again? Dynamic programming type of solution.
-  let sorted-cards = sort.sort-with-compare sort.descending (dict.keys card-index)
+  let sorted-cards =
+    sort.sort-with-compare sort.descending (dict.keys card-index)
 
   let extra-cards-count =
     functional.fold

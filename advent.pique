@@ -1,6 +1,6 @@
 import "comparison"
-import "list"
 import "io"
+import "list"
 import "tree"
 
 
