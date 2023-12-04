@@ -1,0 +1,98 @@
+
+import-all "advent"
+import "dict"
+import "functional"
+import "list"
+import "set"
+import "string"
+
+
+def parse-card (card)
+  let number-text = substr card (strlen "Card") (strlen card)
+  let stripped = string.strip number-text
+  let number = string.string-to-integer stripped
+  return number
+
+
+def parse-numbers (line)
+  let numbers-text = string.split line " "
+  let numbers =
+    map
+      string.string-to-integer
+      numbers-text
+  let filtered =
+    filter
+      lambda x: not-equal x nil
+      numbers
+  print "numbers are" filtered
+  let numbers-set = set.from-list filtered
+  print "numbers" numbers-set
+  return numbers-set
+
+
+def match-numbers (winning have)
+  let overlap = set.intersection winning have
+  print "overlap" overlap
+  return set.values overlap
+
+
+def handle-line (line)
+  let before have = string.split line " | "
+  let card winning = string.split before ": "
+  let card-number = parse-card card
+  let have-numbers = parse-numbers have
+  let winning-numbers = parse-numbers winning
+  let matching = match-numbers winning-numbers have-numbers
+  let wins = list.length matching
+  return list card-number wins
+
+
+def additional-wins (card-index card-number)
+  # Instructions say the card number will never be out of range, but this
+  # isn't true for the tiny test data.
+  let wins = dict.get-or-default card-index card-number 0
+
+  if not wins then
+    return nil
+
+  let extra-card-numbers =
+    map
+      lambda i: add card-number (add i 1)
+      range wins
+
+  print "extra cards from" card-number "with" wins "wins:" extra-card-numbers
+
+  if not extra-card-numbers then
+    return nil
+
+  let transitive-extra-cards =
+    map
+      functional.partial additional-wins card-index
+      extra-card-numbers
+
+  print "transitive cards from" card-number "with" wins "wins:" transitive-extra-cards
+
+  if not transitive-extra-cards then
+    return extra-card-numbers
+
+  let flattened = list.extend-lists transitive-extra-cards
+  let all-cards = list.extend extra-card-numbers flattened
+  return all-cards
+
+
+def main (args)
+  let data = (read-all)
+  let card-scores = map handle-line data
+  let card-index = dict.from-list card-scores
+
+  let extra-cards =
+    map
+      functional.partial additional-wins card-index
+      dict.keys card-index
+  let flattened = list.extend-lists extra-cards
+  print flattened
+  let extra = list.length flattened
+  let original = dict.size card-index
+  let total = add original extra
+  print total
+  return 0
