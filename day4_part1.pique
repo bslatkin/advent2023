@@ -1,0 +1,53 @@
+
+import "advent"
+import "set"
+import "string"
+
+
+def parse-numbers (line)
+  let numbers-text = string.split line " "
+  let numbers =
+    map
+      string.string-to-integer
+      numbers-text
+  let filtered =
+    filter
+      lambda x: not-equal x nil
+      numbers
+  print "numbers are" filtered
+  let numbers-set = set.from-list filtered
+  print "numbers" numbers-set
+  return numbers-set
+
+
+def match-numbers (winning have)
+  let overlap = set.intersection winning have
+  print "overlap" overlap
+  return set.values overlap
+
+
+def score-matches (matching)
+  let total = list.length matching
+  if not total then
+    return 0
+
+  return pow 2 (sub total 1)
+
+
+def handle-line (line)
+  let before have = string.split line " | "
+  let card winning = string.split before ": "
+  let have-numbers = parse-numbers have
+  let winning-numbers = parse-numbers winning
+  let matching = match-numbers winning-numbers have-numbers
+  print "matching" matching
+  let score = score-matches matching
+  return score
+
+
+def main (args)
+  let data = (advent.read-all)
+  let scores = map handle-line data
+  let total = sum scores
+  print total
+  return 0
