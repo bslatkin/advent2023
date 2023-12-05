@@ -1,3 +1,6 @@
+import "advent"
+import "functional"
+import "string"
 
 struct range-mapping (from to length)
 
@@ -45,6 +48,109 @@ def find-mapping (mapping-list from-number)
   return first filtered
 
 
+struct data-section (header trailer)
+
+
+def parse-line (state line)
+  let all-sections pending = state
+
+  # New section start
+  if not pending then
+    let next-section = data-section (header = line) (trailer = nil)
+    return list all-sections next-section
+
+  # Section end
+  if not line then
+    let next-sections = prepend pending all-sections
+    return list next-sections nil
+
+  # Section continuation
+  let next-pending =
+    data-section-set-trailer
+      pending
+      prepend line (data-section-trailer pending)
+  return list all-sections next-pending
+
+
+def parse-seeds (sections)
+  # Like "seeds: 79 14 55 13"
+  let seed-sections =
+    filter
+      lambda section: string.starts-with (data-section-header section) "seeds:"
+      sections
+  if not-equal (list.length seed-sections) 1 then
+    raise "Should only be one seed section" seed-sections
+
+  let found = first seed-sections
+  let before after = string.split (data-section-header found) ": "
+  let numbers-text = string.split after " "
+  let numbers = map string.string-to-integer numbers-text
+  return numbers
+
+
+def parse-mapping-range (line)
+  let from to length = string.split line " "
+  return range-mapping (from = from) (to = to) (length = length)
+
+
+def parse-mapping-header (header)
+  # Like "seed-to-soil map:"
+  let to-index = string.find header "-to-"
+  if equal to-index -1 then
+    raise "Bad header to" header
+
+  let space-index = string.find header " "
+  if equal space-index -1 then
+    raise "Bad header space" header
+
+  let from-name = substr header 0 to-index
+  let to-name = substr header (add to-index (strlen "-to-")) space-index
+  return list from-name to-name
+
+
+def parse-mapping-section (section)
+  let key = parse-mapping-header (data-section-header section)
+  let mapping-list =
+    map
+      parse-mapping-range
+      data-section-trailer section
+  return list key mapping-list
+
+
+
+def parse-mappings (sections)
+  let mapping-sections =
+    filter
+      lambda section: not (string.starts-with (data-section-header section) "seeds:")
+      sections
+  let parsed =
+    map
+      parse-mapping-section
+      mapping-sections
+  return parsed
+
+
+def parse-sections (section-list)
+  nil
+
+
+seed-to-soil map:
+50 98 2
+52 50 48
+
+soil-to-fertilizer map:
+0 15 37
+37 52 2
+39 0 15
+
+fertilizer-to-water map:
+water-to-light map:
+light-to-temperature map:
+temperature-to-humidity map:
+humidity-to-location map:
+
+
+
 def main (args)
   let mapping-list =
     list
@@ -62,15 +168,12 @@ def main (args)
   let to-number = translate-number mapping from-number
   print "Mapped" from-number "to" to-number
 
+  let data = (advent.read-all)
+  let sections ignore = functional.fold parse-line data (list nil nil)
+
+  let seeds = parse-seeds sections
+  let mappings = parse-mappings sections
+  print seeds
+  print mappings
+
   return 0
-
-
-# Keys are source
-# range-dict
-
-# need to index on a range, maybe assign it
-# it's too big to materialize
-# have a tree where the source start is where it's indexed
-# given a source value, find all ranges where the source value is greater than
-  or equal to the source value
-#
