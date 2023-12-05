@@ -1,0 +1,76 @@
+
+struct range-mapping (from to length)
+
+
+def mapping-end (mapping)
+  return
+
+
+def is-in-range (mapping from-number)
+  let start = range-mapping-from mapping
+  if less-than from-number start then
+    return false
+
+  let end = add start (range-mapping-length mapping)  # Not inclusive
+  if greater-equal from-number end then
+    return false
+
+  return true
+
+
+def translate-number (mapping from-number)
+  if not (is-in-range mapping from-number) then
+    raise list "Should not happen" mapping "with number" from-number
+
+  let from-start = range-mapping-from mapping
+  let delta = sub from-number from-start
+  let to-start = range-mapping-to mapping
+  let to-number = add delta to-start
+  return to-number
+
+
+def find-mapping (mapping-list from-number)
+  let maybe-matches = map
+    lambda mapping:
+      if is-in-range mapping from-number then
+        mapping
+        else
+        nil
+    mapping-list
+
+  let filtered = filter bool maybe-matches
+  if not-equal (list.length filtered) 1 then
+    raise "Found bad matches for" from-number ":" filtered "in" mapping-list
+
+  return first filtered
+
+
+def main (args)
+  let mapping-list =
+    list
+      range-mapping
+        from = 25
+        to = 99
+        length = 40
+      range-mapping
+        from = 102
+        to = 34
+        length = 8
+
+  let from-number = 27
+  let mapping = find-mapping mapping-list from-number
+  let to-number = translate-number mapping from-number
+  print "Mapped" from-number "to" to-number
+
+  return 0
+
+
+# Keys are source
+# range-dict
+
+# need to index on a range, maybe assign it
+# it's too big to materialize
+# have a tree where the source start is where it's indexed
+# given a source value, find all ranges where the source value is greater than
+  or equal to the source value
+#
