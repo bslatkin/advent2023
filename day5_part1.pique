@@ -2,7 +2,7 @@ import "advent"
 import "functional"
 import "string"
 
-struct range-mapping (from to length)
+struct range-mapping (to from length)
 
 
 def mapping-end (mapping)
@@ -11,10 +11,11 @@ def mapping-end (mapping)
 
 def is-in-range (mapping from-number)
   let start = range-mapping-from mapping
+  let end = add start (range-mapping-length mapping)  # Not inclusive
+
   if less-than from-number start then
     return false
 
-  let end = add start (range-mapping-length mapping)  # Not inclusive
   if greater-equal from-number end then
     return false
 
@@ -33,19 +34,20 @@ def translate-number (mapping from-number)
 
 
 def find-mapping (mapping-list from-number)
-  let maybe-matches = map
-    lambda mapping:
-      if is-in-range mapping from-number then
-        mapping
-        else
-        nil
-    mapping-list
+  let maybe-matches =
+    filter
+      lambda mapping: is-in-range mapping from-number
+      mapping-list
 
-  let filtered = filter bool maybe-matches
-  if not-equal (list.length filtered) 1 then
-    raise "Found bad matches for" from-number ":" filtered "in" mapping-list
+  # When there's no match don't translate the number
+  if not maybe-matches then
+    return from-number
 
-  return first filtered
+  if not-equal (list.length maybe-matches) 1 then
+    raise "Found multiple matches for" from-number ":" maybe-matches "in" mapping-list
+
+  let mapping = first maybe-matches
+  return translate-number mapping from-number
 
 
 struct data-section (header trailer)
@@ -89,91 +91,85 @@ def parse-seeds (sections)
 
 
 def parse-mapping-range (line)
-  let from to length = string.split line " "
-  return range-mapping (from = from) (to = to) (length = length)
+  let to from length = string.split line " "
+
+  return
+    range-mapping
+      to = string.string-to-integer to
+      from = string.string-to-integer from
+      length = string.string-to-integer length
 
 
-def parse-mapping-header (header)
-  # Like "seed-to-soil map:"
-  let to-index = string.find header "-to-"
-  if equal to-index -1 then
-    raise "Bad header to" header
-
-  let space-index = string.find header " "
-  if equal space-index -1 then
-    raise "Bad header space" header
-
-  let from-name = substr header 0 to-index
-  let to-name = substr header (add to-index (strlen "-to-")) space-index
-  return list from-name to-name
+let DEPENDENCIES_CHAIN =
+  list
+    "seed-to-soil map:"
+    "soil-to-fertilizer map:"
+    "fertilizer-to-water map:"
+    "water-to-light map:"
+    "light-to-temperature map:"
+    "temperature-to-humidity map:"
+    "humidity-to-location map:"
 
 
 def parse-mapping-section (section)
-  let key = parse-mapping-header (data-section-header section)
+  let key = data-section-header section
+  if equal (list.find DEPENDENCIES_CHAIN key) -1 then
+    raise "Could not find mapping key" key
+
   let mapping-list =
     map
       parse-mapping-range
       data-section-trailer section
+
+  print "parsed" key mapping-list
+
   return list key mapping-list
 
 
-
 def parse-mappings (sections)
-  let mapping-sections =
+  let filtered =
     filter
       lambda section: not (string.starts-with (data-section-header section) "seeds:")
       sections
-  let parsed =
+  let items =
     map
       parse-mapping-section
-      mapping-sections
-  return parsed
+      filtered
+  return dict.from-list items
 
 
-def parse-sections (section-list)
-  nil
+def step-chain (step-dict step-index from-number)
+  if greater-equal step-index (list.length DEPENDENCIES_CHAIN) then
+    return from-number
 
+  let step-name = list.index DEPENDENCIES_CHAIN step-index
+  let mapping-list = dict.get step-dict step-name
+  let to-number = find-mapping mapping-list from-number
+  print step-name "from" from-number "to" to-number
 
-seed-to-soil map:
-50 98 2
-52 50 48
-
-soil-to-fertilizer map:
-0 15 37
-37 52 2
-39 0 15
-
-fertilizer-to-water map:
-water-to-light map:
-light-to-temperature map:
-temperature-to-humidity map:
-humidity-to-location map:
-
+  let next-step-index = add step-index 1
+  return step-chain step-dict next-step-index to-number
 
 
 def main (args)
-  let mapping-list =
-    list
-      range-mapping
-        from = 25
-        to = 99
-        length = 40
-      range-mapping
-        from = 102
-        to = 34
-        length = 8
-
-  let from-number = 27
-  let mapping = find-mapping mapping-list from-number
-  let to-number = translate-number mapping from-number
-  print "Mapped" from-number "to" to-number
-
   let data = (advent.read-all)
-  let sections ignore = functional.fold parse-line data (list nil nil)
+  let sections ignore =
+    functional.fold
+      parse-line
+      list.append data ""  # add a blank line so the fold ends
+      list nil nil
 
   let seeds = parse-seeds sections
-  let mappings = parse-mappings sections
-  print seeds
-  print mappings
+  let step-dict = parse-mappings sections
+
+  let translated =
+    map
+      functional.partial step-chain step-dict 0
+      seeds
+
+  let lowest = min translated
+
+  print translated
+  print lowest
 
   return 0
