@@ -5,10 +5,6 @@ import "string"
 struct range-mapping (to from length)
 
 
-def mapping-end (mapping)
-  return
-
-
 def is-in-range (mapping from-number)
   let start = range-mapping-from mapping
   let end = add start (range-mapping-length mapping)  # Not inclusive
