@@ -19,9 +19,13 @@ def span-overlap (input-span filter-span)
   let filter-start = span-start filter-span
   let filter-end = span-end filter-span
 
-  let below-length = max 0 (sub filter-start input-start)
+  let input-length = sub input-end input-start
+  let below-length =
+    min
+      input-length
+      max 0 (sub filter-start input-start)
   let below-end = add input-start below-length
-  let overlap-end = max input-start (min input-end filter-end)
+  let overlap-end = max below-end (min input-end filter-end)
 
   let below =
     span
@@ -42,15 +46,66 @@ def span-overlap (input-span filter-span)
   return list below overlap above
 
 
+def test-span-overlap ()
+  # Fully enclosed: check
+  # |  ||    ||   |
+  print
+    span-overlap
+      span (start = 0) (end = 100)
+      span (start = 25) (end = 75)
+
+  # Overlap left: check
+  # |    ||   |    ||
+  print
+    span-overlap
+      span (start = 0) (end = 25)
+      span (start = 10) (end = 75)
+
+  # Overlap right: check
+  # ||   |    ||    |
+  print
+    span-overlap
+      span (start = 75) (end = 100)
+      span (start = 50) (end = 80)
+
+  # Cutout: check
+  # ||    |     |    ||
+  print
+    span-overlap
+      span (start = 79) (end = 80)
+      span (start = 52) (end = 100)
+
+  # All below
+  # |   |   ||    ||
+  print
+    span-overlap
+      span (start = 10) (end = 12)
+      span (start = 15) (end = 18)
+
+  # All above: check
+  # ||   ||   |    |
+  print
+    span-overlap
+      span (start = 127) (end = 128)
+      span (start = 0) (end = 15)
+
+
 struct translation (to from)
 
 
-def translate-span (overlap to-span)
-  let delta = sub (span-end to-span) (span-start to-span)
+def translate-span (translation overlap)
+  let from = translation-from translation
+  let to = translation-to translation
+
+  let delta = sub (span-start overlap) (span-start from)
+  let length = sub (span-end overlap) (span-start overlap)
+  let to-start = add (span-start to) delta
+  let to-end = add to-start length
+
   return
     span
-      start = add (span-start overlap) delta
-      end = add (span-end overlap) delta
+      start = to-start
+      end = to-end
 
 
 def maybe-translate (the-translation from-span)
@@ -58,8 +113,7 @@ def maybe-translate (the-translation from-span)
   let below overlap above = span-overlap from-span filter-span
   print "From" from-span
   print "Below" below "overlap" overlap "above" above
-  let translated-overlap =
-    translate-span overlap (translation-to the-translation)
+  let translated-overlap = translate-span the-translation overlap
   print "Translated" translated-overlap
   return list below translated-overlap above
 
@@ -210,33 +264,22 @@ def parse-mappings (sections)
 def main (args)
   let data = (advent.read-all)
 
-  # let seed = span (start = 79) (end = 80)
-  # let filter = span (start = 52) (end = 100)
-  # let result = span-overlap seed filter
-  # print result
+  # (test-span-overlap)
 
-  # let seed = span (start = 127) (end = 128)
-  # let filter = span (start = 0) (end = 15)
-  # let result = span-overlap seed filter
-  # print result
+  let sections ignore =
+    functional.fold
+      parse-line
+      list.append data ""  # add a blank line so the fold ends
+      list nil nil
+  let fixed-sections = list.reverse sections
 
-  let seed = span (start = 10) (end = 12)
-  let filter = span (start = 15) (end = 18)
-  let result = span-overlap seed filter
+  let seeds = parse-seeds sections
+  let step-list = parse-mappings fixed-sections
+
+  let final-spans = process-seeds step-list seeds
+  let lowest-starts = map span-start final-spans
+  let result = min lowest-starts
+
   print result
-
-
-  # let sections ignore =
-  #   functional.fold
-  #     parse-line
-  #     list.append data ""  # add a blank line so the fold ends
-  #     list nil nil
-  # let fixed-sections = list.reverse sections
-
-  # let seeds = parse-seeds sections
-  # let step-list = parse-mappings fixed-sections
-
-  # let result = process-seeds step-list seeds
-  # print result
 
   return 0
