@@ -12,10 +12,41 @@ def parse-line (line)
   return numbers
 
 
+def can-win (time-race record-distance time-button)
+  # This is the equation for winning:
+  # time_button * 1mm/sec * (race_time - time_button) > record_distance
+  # time_button <= race_time
+  let distance =
+    mul
+      time-button
+      sub time-race time-button
+
+  return greater-than distance record-distance
+
+
+def count-wins (race)
+  let time-race record-distance = race
+  let button-times = range time-race
+  let wins =
+    filter
+      functional.partial can-win time-race record-distance
+      button-times
+  return list.length wins
+
+
 def main (args)
   let data = (advent.read-all)
   let numbers = map parse-line data
   let races = apply zip numbers
   print races
+
+  let all-wins = map count-wins races
+
+  let result =
+    functional.fold
+      mul
+      all-wins
+      1
+  print result
 
   return 0
