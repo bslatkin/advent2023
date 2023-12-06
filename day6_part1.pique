@@ -1,0 +1,21 @@
+import "advent"
+import "functional"
+import "list"
+import "string"
+
+
+def parse-line (line)
+  let before after = string.split line ":"
+  let maybe-numbers = string.split after " "
+  let numbers-text = filter string.strip maybe-numbers
+  let numbers = map string.string-to-integer numbers-text
+  return numbers
+
+
+def main (args)
+  let data = (advent.read-all)
+  let numbers = map parse-line data
+  let races = apply zip numbers
+  print races
+
+  return 0
