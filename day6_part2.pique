@@ -8,6 +8,13 @@ def can-win (time-race record-distance time-button)
   # This is the equation for winning:
   # time_button * 1mm/sec * (race_time - time_button) > record_distance
   # time_button <= race_time
+  #
+  # Solving for the roots
+  # time_button * race_time - time_button^2 > record_distance
+  # ax + bx^2 + c = 0
+  # a = race_time
+  # b = -1
+  # c = -record_distance
   let distance = mul time-button (sub time-race time-button)
 
   return greater-than distance record-distance

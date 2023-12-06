@@ -1,0 +1,40 @@
+import "advent"
+import "functional"
+import "list"
+import "string"
+
+
+def count-wins (time-race record-distance)
+  # This is the equation for winning:
+  # time_button * 1mm/sec * (race_time - time_button) > record_distance
+  # time_button <= race_time
+  #
+  # Solving for the roots
+  # time_button * race_time - time_button^2 > record_distance
+  # ax + bx^2 + c = 0
+  # a = race_time
+  # b = -1
+  # c = -record_distance
+  let a = time-race
+  let b = -1
+  let c = negate record-distance
+  let two_a = mul 2 a
+  let neg_b = negate b
+  let b_2 = pow b 2
+  let four_ac = mul 4 (mul a c)
+  let plus_minus = sqrt (sub b_2 four_ac)
+
+  let lower = div (add neg_b plus_minus) two_a
+  let upper = div (sub neg_b plus_minus) two_a
+  return max lower upper
+
+
+def main (args)
+  # let time-race = 40709879
+  # let record-distance = 215105121471005
+  let time-race = 7
+  let record-distance = 9
+  let result = count-wins time-race record-distance
+  print result
+
+  return 0
