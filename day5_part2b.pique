@@ -8,8 +8,9 @@ import "string"
 struct span (start end)
 
 
-def span-length (the-span)
-  return sub (span-end the-span) (span-start the-span)
+def span-empty (the-span)
+  let delta = sub (span-end the-span) (span-start the-span)
+  return less-equal delta 0
 
 
 def span-overlap (input-span filter-span)
@@ -18,20 +19,25 @@ def span-overlap (input-span filter-span)
   let filter-start = span-start filter-span
   let filter-end = span-end filter-span
 
+  let below-length = max 0 (sub filter-start input-start)
+  let below-end = add input-start below-length
+  let overlap-end = max input-start (min input-end filter-end)
+
   let below =
     span
       start = input-start
-      end = min input-end filter-start
-
-  let above =
-    span
-      start = min input-end filter-end
-      end = input-end
+      end = below-end
 
   let overlap =
     span
-      start = span-end below
-      end = span-start above
+      start = below-end
+      end = overlap-end
+
+  let above =
+    span
+      start = overlap-end
+      end = input-end
+
 
   return list below overlap above
 
@@ -50,10 +56,11 @@ def translate-span (overlap to-span)
 def maybe-translate (the-translation from-span)
   let filter-span = translation-from the-translation
   let below overlap above = span-overlap from-span filter-span
-  print "Overlap" overlap
+  print "From" from-span
+  print "Below" below "overlap" overlap "above" above
   let translated-overlap =
     translate-span overlap (translation-to the-translation)
-
+  print "Translated" translated-overlap
   return list below translated-overlap above
 
 
@@ -62,23 +69,47 @@ def translate-one (translation-list pending)
     return nil
 
   if not translation-list then
-    return nil
+    # If there are no more translations available then let the seeds pass
+    # though without being moved.
+    return pending
 
   let the-translation rest-translation ... = translation-list
-  let the-span rest-pending ... = pending
 
-  print "Folding" the-translation "for" the-span
+  print "Translating" the-translation "to" pending
 
-  let below overlap above = maybe-translate the-translation the-span
+  let translations =
+    map
+      functional.partial maybe-translate the-translation
+      pending
+
+  let below = map (lambda t: list.index t 0) translations
+  let overlap = map (lambda t: list.index t 1) translations
+  let above = map (lambda t: list.index t 2) translations
 
   let next-pending =
     filter
-      lambda pending-span: span-length pending-span
-      list below above
+      lambda s: not (span-empty s)
+      list.extend below above
+
+  print "Next pending" next-pending
 
   let pending-translations = translate-one rest-translation next-pending
-  let all-translations = list.extend (list overlap) pending-translations
+  let all-translations = list.extend overlap pending-translations
+  print "Overlap" overlap "pending" pending-translations
   return all-translations
+
+
+def process-seeds (step-list pending)
+  if not step-list then
+    return
+      filter
+        lambda s: not (span-empty s)
+        pending
+
+  let step rest-steps ... = step-list
+  let next-pending = translate-one step pending
+
+  return process-seeds rest-steps next-pending
 
 
 struct data-section (header trailer)
@@ -178,20 +209,28 @@ def parse-mappings (sections)
 
 def main (args)
   let data = (advent.read-all)
+
+  # let seed = span (start = 79) (end = 80)
+  # let filter = span (start = 52) (end = 100)
+  # let result = span-overlap seed filter
+  # print result
+
+  # let seed = span (start = 127) (end = 128)
+  # let filter = span (start = 0) (end = 15)
+  # let result = span-overlap seed filter
+  # print result
+
   let sections ignore =
     functional.fold
       parse-line
       list.append data ""  # add a blank line so the fold ends
       list nil nil
+  let fixed-sections = list.reverse sections
 
   let seeds = parse-seeds sections
-  let step-list = parse-mappings sections
+  let step-list = parse-mappings fixed-sections
 
-  let one-seed = first seeds
-  let identity-translation = translation (to = one-seed) (from = one-seed)
-  let translation-list = list.append (first step-list) identity-translation
-
-  let result = translate-one translation-list (list one-seed)
+  let result = process-seeds step-list seeds
   print result
 
   return 0
