@@ -1,0 +1,210 @@
+import "advent"
+import "functional"
+import "list"
+import "string"
+
+
+# Start inclusive, end exclusive
+struct span (start end)
+
+
+def span-length (the-span)
+  return sub (span-end the-span) (span-start the-span)
+
+
+def span-overlap (input-span filter-span)
+  let input-start = span-start input-span
+  let input-end = span-end input-span
+  let filter-start = span-start filter-span
+  let filter-end = span-end filter-span
+
+  let below =
+    span
+      start = input-start
+      end = min input-end filter-start
+
+  let above =
+    span
+      start = min input-end filter-end
+      end = input-end
+
+  let overlap =
+    span
+      start = span-end below
+      end = span-start above
+
+  return list below overlap above
+
+
+struct translation (to from)
+
+
+def translate-span (overlap to-span)
+  let delta = sub (span-end to-span) (span-start to-span)
+  return
+    span
+      start = add (span-start overlap) delta
+      end = add (span-end overlap) delta
+
+
+def maybe-translate (the-translation from-span)
+  let filter-span = translation-from the-translation
+  let below overlap above = span-overlap from-span filter-span
+  print "Overlap" overlap
+  let translated-overlap =
+    translate-span overlap (translation-to the-translation)
+
+  return list below translated-overlap above
+
+
+def translate-one (translation-list the-span)
+  print "Starting translation for" the-span
+  if equal (span-length the-span) 0 then
+    return nil
+
+  def folder (state the-translation)
+    print "Folding" the-translation "for" the-span
+    let translated pending = state
+    let below overlap above = maybe-translate the-translation the-span
+    let next-translated = prepend overlap translated
+    let next-pending = list.push-all (list below above) pending
+    print "Below" below
+    print "Above" above
+    let filtered =
+      filter
+        lambda pending-span: span-length pending-span
+        next-pending
+    print "Filtered" filtered
+    return list next-translated filtered
+
+  let translated-list pending-list =
+    functional.fold
+      folder
+      translation-list
+      list nil nil
+
+  print "Pending remaining" pending-list
+
+  let translated-pending =
+    map
+      functional.partial translate-one translation-list
+      pending-list
+
+  let flattened = list.extend-lists translated-pending
+  return list.extend translated-list flattened
+
+
+struct data-section (header trailer)
+
+
+def parse-line (state line)
+  let all-sections pending = state
+
+  # New section start
+  if not pending then
+    let next-section = data-section (header = line) (trailer = nil)
+    return list all-sections next-section
+
+  # Section end
+  if not line then
+    let next-sections = prepend pending all-sections
+    return list next-sections nil
+
+  # Section continuation
+  let next-pending =
+    data-section-set-trailer
+      pending
+      prepend line (data-section-trailer pending)
+  return list all-sections next-pending
+
+
+def pair-up (numbers accumulated)
+  if not numbers then
+    return accumulated
+
+  let a b next-numbers ... = numbers
+  let pair = list a b
+  let next-accumulated = prepend pair accumulated
+  return pair-up next-numbers next-accumulated
+
+
+def seed-pair (pair)
+  let start length = pair
+  return
+    span (start = start) (end = (add start length))
+
+
+def parse-seeds (sections)
+  # Like "seeds: 79 14 55 13", but pairs of ranges
+  let seed-sections =
+    filter
+      lambda section: string.starts-with (data-section-header section) "seeds:"
+      sections
+  if not-equal (list.length seed-sections) 1 then
+    raise "Should only be one seed section" seed-sections
+
+  let found = first seed-sections
+  let before after = string.split (data-section-header found) ": "
+  let numbers-text = string.split after " "
+  let numbers = map string.string-to-integer numbers-text
+
+  let pairs = pair-up numbers nil
+  let seed-spans = map seed-pair pairs
+  return seed-spans
+
+
+def parse-mapping-range (line)
+  let to-text from-text length-text = string.split line " "
+  let to = string.string-to-integer to-text
+  let from = string.string-to-integer from-text
+  let length = string.string-to-integer length-text
+
+  let to-span = span (start = to) (end = add to length)
+  let from-span = span (start = from) (end = add from length)
+
+  return translation (to = to-span) (from = from-span)
+
+
+def parse-mapping-section (section)
+  let key = data-section-header section
+  let mapping-list =
+    map
+      parse-mapping-range
+      data-section-trailer section
+
+  print "parsed" key mapping-list
+
+  return mapping-list
+
+
+def parse-mappings (sections)
+  let filtered =
+    filter
+      lambda section: not (string.starts-with (data-section-header section) "seeds:")
+      sections
+  let mapping-list =
+    map
+      parse-mapping-section
+      filtered
+  return mapping-list
+
+
+def main (args)
+  let data = (advent.read-all)
+  let sections ignore =
+    functional.fold
+      parse-line
+      list.append data ""  # add a blank line so the fold ends
+      list nil nil
+
+  let seeds = parse-seeds sections
+  let step-list = parse-mappings sections
+
+  let one-seed = first seeds
+  let identity-translation = translation (to = one-seed) (from = one-seed)
+  let translation-list = list.append (first step-list) identity-translation
+
+  let result = translate-one translation-list one-seed
+  print result
+
+  return 0
