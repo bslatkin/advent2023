@@ -33,16 +33,20 @@ def translate-number (mapping from-number)
 
 def find-mapping (mapping-list from-number)
   let maybe-matches =
-    filter
-      lambda mapping: is-in-range mapping from-number
-      mapping-list
+    filter (lambda mapping: is-in-range mapping from-number) mapping-list
 
   # When there's no match don't translate the number
   if not maybe-matches then
     return from-number
 
   if not-equal (list.length maybe-matches) 1 then
-    raise "Found multiple matches for" from-number ":" maybe-matches "in" mapping-list
+    raise
+      "Found multiple matches for"
+        from-number
+        ":"
+        maybe-matches
+        "in"
+        mapping-list
 
   let mapping = first maybe-matches
   return translate-number mapping from-number
@@ -121,10 +125,7 @@ def range-iterator (length)
 
 def expand-range-iterator (pair)
   let start length = pair
-  let cursor =
-    map-iterator
-      lambda v: add start v
-      range-iterator length
+  let cursor = map-iterator (lambda v: add start v) (range-iterator length)
   return cursor
 
 
@@ -172,10 +173,7 @@ def parse-mapping-section (section)
   if equal (list.find DEPENDENCIES_CHAIN key) -1 then
     raise "Could not find mapping key" key
 
-  let mapping-list =
-    map
-      parse-mapping-range
-      data-section-trailer section
+  let mapping-list = map parse-mapping-range (data-section-trailer section)
 
   print "parsed" key mapping-list
 
@@ -185,12 +183,11 @@ def parse-mapping-section (section)
 def parse-mappings (sections)
   let filtered =
     filter
-      lambda section: not (string.starts-with (data-section-header section) "seeds:")
+      lambda section:
+        not
+          string.starts-with (data-section-header section) "seeds:"
       sections
-  let items =
-    map
-      parse-mapping-section
-      filtered
+  let items = map parse-mapping-section filtered
   return dict.from-list items
 
 
@@ -260,10 +257,7 @@ def main (args)
   let seeds = parse-seeds sections
   let step-dict = parse-mappings sections
 
-  let seed-cursors =
-    map
-      functional.partial seed-iterator step-dict
-      seeds
+  let seed-cursors = map (functional.partial seed-iterator step-dict) seeds
 
   let seed-lowest = map drain seed-cursors
   print seed-lowest
