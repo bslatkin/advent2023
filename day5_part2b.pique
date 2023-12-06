@@ -57,41 +57,28 @@ def maybe-translate (the-translation from-span)
   return list below translated-overlap above
 
 
-def translate-one (translation-list the-span)
-  print "Starting translation for" the-span
-  if equal (span-length the-span) 0 then
+def translate-one (translation-list pending)
+  if not pending then
     return nil
 
-  def folder (state the-translation)
-    print "Folding" the-translation "for" the-span
-    let translated pending = state
-    let below overlap above = maybe-translate the-translation the-span
-    let next-translated = prepend overlap translated
-    let next-pending = list.push-all (list below above) pending
-    print "Below" below
-    print "Above" above
-    let filtered =
-      filter
-        lambda pending-span: span-length pending-span
-        next-pending
-    print "Filtered" filtered
-    return list next-translated filtered
+  if not translation-list then
+    return nil
 
-  let translated-list pending-list =
-    functional.fold
-      folder
-      translation-list
-      list nil nil
+  let the-translation rest-translation ... = translation-list
+  let the-span rest-pending ... = pending
 
-  print "Pending remaining" pending-list
+  print "Folding" the-translation "for" the-span
 
-  let translated-pending =
-    map
-      functional.partial translate-one translation-list
-      pending-list
+  let below overlap above = maybe-translate the-translation the-span
 
-  let flattened = list.extend-lists translated-pending
-  return list.extend translated-list flattened
+  let next-pending =
+    filter
+      lambda pending-span: span-length pending-span
+      list below above
+
+  let pending-translations = translate-one rest-translation next-pending
+  let all-translations = list.extend (list overlap) pending-translations
+  return all-translations
 
 
 struct data-section (header trailer)
@@ -204,7 +191,7 @@ def main (args)
   let identity-translation = translation (to = one-seed) (from = one-seed)
   let translation-list = list.append (first step-list) identity-translation
 
-  let result = translate-one translation-list one-seed
+  let result = translate-one translation-list (list one-seed)
   print result
 
   return 0
