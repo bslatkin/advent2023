@@ -3,6 +3,7 @@ import "functional"
 import "list"
 import "string"
 
+
 struct range-mapping (to from length)
 
 
@@ -81,13 +82,50 @@ def pair-up (numbers accumulated)
   return pair-up next-numbers next-accumulated
 
 
-def expand-range (pair)
+def map-iterator-next (map-func cursor)
+  let item next-cursor = (cursor)
+  let value = map-func item
+  if next-cursor then
+    let wrapper = lambda: map-iterator-next map-func next-cursor
+    return list value wrapper
+
+  return list value nil
+
+
+def map-iterator (map-func cursor)
+  if not cursor then
+    return nil
+
+  return lambda: map-iterator-next map-func cursor
+
+
+def range-iterator-next (current length)
+  let next-current = add current 1
+
+  if equal next-current length then
+    return list current nil
+
+  let next-cursor = lambda: range-iterator-next next-current length
+  return list current next-cursor
+
+
+def range-iterator (length)
+  if less-than length 0 then
+    raise "Must be positive"
+
+  if equal length 0 then
+    return nil
+
+  return lambda: range-iterator-next 0 length
+
+
+def expand-range-iterator (pair)
   let start length = pair
-  let result =
-    map
+  let cursor =
+    map-iterator
       lambda v: add start v
-      range length
-  return result
+      range-iterator length
+  return cursor
 
 
 def parse-seeds (sections)
@@ -105,10 +143,7 @@ def parse-seeds (sections)
   let numbers = map string.string-to-integer numbers-text
 
   let pairs = pair-up numbers nil
-  let ranges = map expand-range pairs
-  let all-numbers = list.extend-lists ranges
-
-  return all-numbers
+  return pairs
 
 
 def parse-mapping-range (line)
@@ -166,10 +201,52 @@ def step-chain (step-dict step-index from-number)
   let step-name = list.index DEPENDENCIES_CHAIN step-index
   let mapping-list = dict.get step-dict step-name
   let to-number = find-mapping mapping-list from-number
-  print step-name "from" from-number "to" to-number
 
   let next-step-index = add step-index 1
   return step-chain step-dict next-step-index to-number
+
+
+def seed-iterator-next (step-dict min-number cursor)
+  let from-number next-cursor = (cursor)
+  let to-number = step-chain step-dict 0 from-number
+  print "from" from-number "to" to-number
+
+  let next-min-number =
+    switch
+      case (equal min-number nil)
+        to-number
+      case (less-than to-number min-number)
+        to-number
+      default
+        min-number
+
+  if not next-cursor then
+    return list next-min-number nil
+
+  let wrapper =
+    lambda: seed-iterator-next step-dict next-min-number next-cursor
+  return list next-min-number wrapper
+
+
+def seed-iterator (step-dict pair)
+  let cursor = expand-range-iterator pair
+  if equal cursor nil then
+    return nil
+
+  return lambda: seed-iterator-next step-dict nil cursor
+
+
+def drain-helper (last-item cursor)
+  if not cursor then
+    return last-item
+
+  print "draining" last-item
+  let next-item next-cursor = (cursor)
+  return drain-helper next-item next-cursor
+
+
+def drain (cursor)
+  return drain-helper nil cursor
 
 
 def main (args)
@@ -183,14 +260,15 @@ def main (args)
   let seeds = parse-seeds sections
   let step-dict = parse-mappings sections
 
-  let translated =
+  let seed-cursors =
     map
-      functional.partial step-chain step-dict 0
+      functional.partial seed-iterator step-dict
       seeds
 
-  let lowest = min translated
+  let seed-lowest = map drain seed-cursors
+  print seed-lowest
 
-  print translated
+  let lowest = min seed-lowest
   print lowest
 
   return 0
