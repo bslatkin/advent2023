@@ -220,17 +220,23 @@ def main (args)
   # let result = span-overlap seed filter
   # print result
 
-  let sections ignore =
-    functional.fold
-      parse-line
-      list.append data ""  # add a blank line so the fold ends
-      list nil nil
-  let fixed-sections = list.reverse sections
-
-  let seeds = parse-seeds sections
-  let step-list = parse-mappings fixed-sections
-
-  let result = process-seeds step-list seeds
+  let seed = span (start = 10) (end = 12)
+  let filter = span (start = 15) (end = 18)
+  let result = span-overlap seed filter
   print result
+
+
+  # let sections ignore =
+  #   functional.fold
+  #     parse-line
+  #     list.append data ""  # add a blank line so the fold ends
+  #     list nil nil
+  # let fixed-sections = list.reverse sections
+
+  # let seeds = parse-seeds sections
+  # let step-list = parse-mappings fixed-sections
+
+  # let result = process-seeds step-list seeds
+  # print result
 
   return 0
