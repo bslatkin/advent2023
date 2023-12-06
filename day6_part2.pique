@@ -1,0 +1,47 @@
+import "advent"
+import "functional"
+import "list"
+import "string"
+
+
+def can-win (time-race record-distance time-button)
+  # This is the equation for winning:
+  # time_button * 1mm/sec * (race_time - time_button) > record_distance
+  # time_button <= race_time
+  let distance =
+    mul
+      time-button
+      sub time-race time-button
+
+  return greater-than distance record-distance
+
+
+def count-wins (time-race record-distance time-button count)
+  if greater-than time-button time-race then
+    return count
+
+  let next-time-button = add time-button 1
+
+  if equal (mod time-button 100) 0 then
+    print "Looking at" time-button
+
+  let offset =
+    if can-win time-race record-distance time-button then
+      1
+      else
+      0
+
+  let next-count = add count offset
+
+  return count-wins time-race record-distance next-time-button next-count
+
+
+def main (args)
+  let time-race = 40709879
+  let record-distance = 215105121471005
+  # let time-race = 7
+  # let record-distance = 9
+  let result = count-wins time-race record-distance 0 0
+  print result
+
+  return 0
