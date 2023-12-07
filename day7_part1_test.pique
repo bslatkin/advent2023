@@ -38,6 +38,14 @@ test-suite day7-part1-test
     assert equal (compare-hands "AAB42" "ABBA2") -1
     assert equal (compare-hands "ABBA2" "AAB42") 1
     assert equal (compare-hands "ABBA2" "ABBA2") 0
-    assert equal (compare-hands "ABBA2" "ABBA1") -1
-    assert equal (compare-hands "ABBA2" "ABBA3") 1
+    assert equal (compare-hands "ABBA3" "ABBA2") 1
+    assert equal (compare-hands "ABBA2" "ABBA3") -1
+
+
+  test "Compare cards"
+    assert equal (compare-cards "A2" "K2") 1
+    assert equal (compare-cards "A2" "A3") -1
+    assert equal (compare-cards "ABBA2" "ABBA3") -1
+    assert equal (compare-cards "ABBA3" "ABBA2") 1
+
 

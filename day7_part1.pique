@@ -1,4 +1,5 @@
 import "advent"
+import "comparison"
 import "functional"
 import "sort"
 import "string"
@@ -112,6 +113,32 @@ def get-precedence (hand)
 export get-precedence
 
 
+let CARD_PRECEDENCE =
+  list
+    "A"
+    "K"
+    "Q"
+    "J"
+    "T"
+    "9"
+    "8"
+    "7"
+    "6"
+    "5"
+    "4"
+    "3"
+    "2"
+
+
+def compare-cards (a b)
+  let a-precedence = map (functional.partial list.find CARD_PRECEDENCE) (string-iter a)
+  let b-precedence = map (functional.partial list.find CARD_PRECEDENCE) (string-iter b)
+  return mul -1 (comparison.compare-any a-precedence b-precedence)
+
+
+export compare-cards
+
+
 def compare-hands (a b)
   let a-dict = parse-hand a
   let b-dict = parse-hand b
@@ -124,9 +151,7 @@ def compare-hands (a b)
   if greater-than a-value b-value then
     return -1
 
-  # If they're equal then use the lexical ordering descending on the
-  # string representation itself.
-  return mul -1 (compare a b)
+  return compare-cards a b
 
 
 export compare-hands
@@ -147,22 +172,22 @@ def main (args)
   let found = map parse-line data
   let hands-to-bids = dict.from-list found
   let hands bids = apply zip found
-  print hands
-  print bids
+  print "Hands" hands
+  print "Bids" bids
   let sorted = sort-hands hands
   let sorted-bids = map (lambda hand: dict.get hands-to-bids hand) sorted
-  print sorted
-  print sorted-bids
+  print "Sorted hands" sorted
+  print "Sorted bids" sorted-bids
 
   let winnings =
     map
       lambda i bid: mul (add i 1) bid
       range (list.length sorted-bids)
       sorted-bids
-  print winnings
+  print "Winnings" winnings
 
   let total = sum winnings
-  print total
+  print "Total" total
 
 
   return 0
