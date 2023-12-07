@@ -1,6 +1,7 @@
 import "advent"
 import "comparison"
 import "functional"
+import "list"
 import "sort"
 import "string"
 
@@ -36,9 +37,25 @@ export parse-hand
 
 
 def get-hand-counts (hand)
-  let hand-counts = dict.values hand
-  let sorted = sort.sort-with-compare sort.descending hand-counts
-  return sorted
+  let jokers-count no-jokers-dict = dict.pop-or-default hand "J" 0
+  let hand-counts = dict.items no-jokers-dict
+
+  # This handles an edge case where the hand is only jokers
+  if not hand-counts then
+    return list jokers-count
+
+  let sorted =
+    sort.sort-with-compare
+      lambda a b: sort.descending (list.second a) (list.second b)
+      hand-counts
+
+  let top-card rest-cards ... = sorted
+  let card-name count = top-card
+  let adjusted-card = list card-name (add jokers-count count)
+  let spliced = prepend adjusted-card rest-cards
+  let only-counts = map list.second spliced
+
+  return only-counts
 
 
 export get-hand-counts
@@ -118,7 +135,6 @@ let CARD_PRECEDENCE =
     "A"
     "K"
     "Q"
-    "J"
     "T"
     "9"
     "8"
@@ -128,6 +144,7 @@ let CARD_PRECEDENCE =
     "4"
     "3"
     "2"
+    "J"
 
 
 def compare-cards (a b)

@@ -1,0 +1,60 @@
+import-all "testing"
+import-all "day7_part2"
+
+
+test-suite day7-part2-test
+  "Tests for Day 7, part 2"
+
+  runner nested-scope-runner
+
+  test "Create a hand"
+    let result = parse-hand "AAAA4"
+    assert
+      equal
+      list (list "A" 4) (list "4" 1)
+      dict.items result
+
+  test "Get hand counts"
+    let result = parse-hand "AAB4"
+    let counts = get-hand-counts result
+    assert
+      equal
+      list 2 1 1
+      counts
+
+  test "Get precendence"
+    let hand-a = parse-hand "AAB42"
+    let hand-b = parse-hand "ABBA2"
+    let hand-c = parse-hand "AAAA2"
+    let precedence-a = get-precedence hand-a
+    let precedence-b = get-precedence hand-b
+    let precedence-c = get-precedence hand-c
+    assert equal precedence-a 5
+    assert equal precedence-b 4
+    assert equal precedence-c 1
+
+
+  test "Compare hands"
+    assert equal (compare-hands "AAB42" "ABBA2") -1
+    assert equal (compare-hands "ABBA2" "AAB42") 1
+    assert equal (compare-hands "ABBA2" "ABBA2") 0
+    assert equal (compare-hands "ABBA3" "ABBA2") 1
+    assert equal (compare-hands "ABBA2" "ABBA3") -1
+
+
+  test "Compare cards"
+    assert equal (compare-cards "A2" "K2") 1
+    assert equal (compare-cards "A2" "A3") -1
+    assert equal (compare-cards "ABBA2" "ABBA3") -1
+    assert equal (compare-cards "ABBA3" "ABBA2") 1
+
+  test "Joker hand counts"
+    let result = parse-hand "AAJ12"
+    let counts = get-hand-counts result
+    assert
+      equal
+      list 3 1 1
+      counts
+
+
+
