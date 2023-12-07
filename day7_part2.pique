@@ -1,0 +1,193 @@
+import "advent"
+import "comparison"
+import "functional"
+import "sort"
+import "string"
+
+
+def string-iter (the-string)
+  let indexes = range (strlen the-string)
+  let codepoints =
+    map
+      lambda i: substr the-string i (add i 1)
+      indexes
+  return codepoints
+
+
+def parse-hand (hand)
+  let codepoints = string-iter hand
+
+  let hand-dict =
+    functional.fold
+      lambda state card:
+        dict.set
+          state
+          card
+          add
+            dict.get-or-default state card 0
+            1
+      codepoints
+      (dict.new)
+
+  return hand-dict
+
+
+export parse-hand
+
+
+def get-hand-counts (hand)
+  let hand-counts = dict.values hand
+  let sorted = sort.sort-with-compare sort.descending hand-counts
+  return sorted
+
+
+export get-hand-counts
+
+
+def is-five-kind (hand)
+  let counts = get-hand-counts hand
+  return equal (first counts) 5
+
+
+def is-four-kind (hand)
+  let counts = get-hand-counts hand
+  return equal (first counts) 4
+
+
+def is-full-house (hand)
+  let counts = get-hand-counts hand
+  return equal (list.slice counts 0 2) (list 3 2)
+
+
+def is-three-kind (hand)
+  let counts = get-hand-counts hand
+  return equal (first counts) 3
+
+
+def is-two-pair (hand)
+  let counts = get-hand-counts hand
+  return equal (list.slice counts 0 2) (list 2 2)
+
+
+def is-one-pair (hand)
+  let counts = get-hand-counts hand
+  return equal (first counts) 2
+
+
+def is-high-card (hand)
+  return true
+
+
+let PRECEDENCE =
+  list
+    is-five-kind
+    is-four-kind
+    is-full-house
+    is-three-kind
+    is-two-pair
+    is-one-pair
+    is-high-card
+
+
+def map-until-false (map-func i values)
+  if not values then
+    return nil
+
+  let head next-values ... = values
+  let found = map-func head
+  if found then
+    return i
+
+  let next-i = add i 1
+  return map-until-false map-func next-i next-values
+
+
+def get-precedence (hand)
+  return
+    map-until-false
+      lambda precedence-func: precedence-func hand
+      0
+      PRECEDENCE
+
+
+export get-precedence
+
+
+let CARD_PRECEDENCE =
+  list
+    "A"
+    "K"
+    "Q"
+    "J"
+    "T"
+    "9"
+    "8"
+    "7"
+    "6"
+    "5"
+    "4"
+    "3"
+    "2"
+
+
+def compare-cards (a b)
+  let a-precedence = map (functional.partial list.find CARD_PRECEDENCE) (string-iter a)
+  let b-precedence = map (functional.partial list.find CARD_PRECEDENCE) (string-iter b)
+  return mul -1 (comparison.compare-any a-precedence b-precedence)
+
+
+export compare-cards
+
+
+def compare-hands (a b)
+  let a-dict = parse-hand a
+  let b-dict = parse-hand b
+  let a-value = get-precedence a-dict
+  let b-value = get-precedence b-dict
+
+  if less-than a-value b-value then
+    return 1
+
+  if greater-than a-value b-value then
+    return -1
+
+  return compare-cards a b
+
+
+export compare-hands
+
+
+def sort-hands (hands)
+  return sort.sort-with-compare compare-hands hands
+
+
+def parse-line (line)
+  let hand-text bid-text = string.split line " "
+  let bid = string.string-to-integer bid-text
+  return list hand-text bid
+
+
+def main (args)
+  let data = (advent.read-all)
+  let found = map parse-line data
+  let hands-to-bids = dict.from-list found
+  let hands bids = apply zip found
+  print "Hands" hands
+  print "Bids" bids
+  let sorted = sort-hands hands
+  let sorted-bids = map (lambda hand: dict.get hands-to-bids hand) sorted
+  print "Sorted hands" sorted
+  print "Sorted bids" sorted-bids
+
+  let winnings =
+    map
+      lambda i bid: mul (add i 1) bid
+      range (list.length sorted-bids)
+      sorted-bids
+  print "Winnings" winnings
+
+  let total = sum winnings
+  print "Total" total
+
+
+  return 0
