@@ -1,0 +1,34 @@
+import-all "testing"
+import-all "day7_part1"
+
+
+test-suite day7-part1-test
+  "Tests for Day 7, part 1"
+
+  runner nested-scope-runner
+
+  test "Create a hand"
+    let result = parse-hand "AAAA4"
+    assert
+      equal
+      list (list "A" 4) (list "4" 1)
+      dict.items result
+
+  test "Get hand counts"
+    let result = parse-hand "AAB4"
+    let counts = get-hand-counts result
+    assert
+      equal
+      list 2 1 1
+      counts
+
+  test "Get precendence"
+    let hand-a = parse-hand "AAB42"
+    let hand-b = parse-hand "ABBA2"
+    let hand-c = parse-hand "AAAA2"
+    let precedence-a = get-precedence hand-a
+    let precedence-b = get-precedence hand-b
+    let precedence-c = get-precedence hand-c
+    assert equal precedence-a 5
+    assert equal precedence-b 4
+    assert equal precedence-c 1

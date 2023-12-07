@@ -1,0 +1,136 @@
+import "advent"
+import "functional"
+import "sort"
+
+
+def string-iter (the-string)
+  let indexes = range (strlen the-string)
+  let codepoints =
+    map
+      lambda i: substr the-string i (add i 1)
+      indexes
+  return codepoints
+
+
+def parse-hand (hand)
+  let codepoints = string-iter hand
+
+  let hand-dict =
+    functional.fold
+      lambda state card:
+        dict.set
+          state
+          card
+          add
+            dict.get-or-default state card 0
+            1
+      codepoints
+      (dict.new)
+
+  return hand-dict
+
+
+export parse-hand
+
+
+def get-hand-counts (hand)
+  let hand-counts = dict.values hand
+  let sorted = sort.sort-with-compare sort.descending hand-counts
+  return sorted
+
+
+export get-hand-counts
+
+
+def is-five-kind (hand)
+  let counts = get-hand-counts hand
+  return equal (first counts) 5
+
+
+def is-four-kind (hand)
+  let counts = get-hand-counts hand
+  return equal (first counts) 4
+
+
+def is-full-house (hand)
+  let counts = get-hand-counts hand
+  return equal (list.slice counts 0 2) (list 3 2)
+
+
+def is-three-kind (hand)
+  let counts = get-hand-counts hand
+  return equal (first counts) 3
+
+
+def is-two-pair (hand)
+  let counts = get-hand-counts hand
+  return equal (list.slice counts 0 2) (list 2 2)
+
+
+def is-one-pair (hand)
+  let counts = get-hand-counts hand
+  return equal (first counts) 2
+
+
+def is-high-card (hand)
+  return true
+
+
+let PRECEDENCE =
+  list
+    is-five-kind
+    is-four-kind
+    is-full-house
+    is-three-kind
+    is-two-pair
+    is-one-pair
+    is-high-card
+
+
+def map-until-false (map-func i values)
+  if not values then
+    return nil
+
+  let head next-values ... = values
+  let found = map-func head
+  if found then
+    return i
+
+  let next-i = add i 1
+  return map-until-false map-func next-i next-values
+
+
+def get-precedence (hand)
+  return
+    map-until-false
+      lambda precedence-func: precedence-func hand
+      0
+      PRECEDENCE
+
+
+export get-precedence
+
+
+def compare-hands (a b)
+  let a-value = get-precedence a
+  let b-value = get-precedence b
+
+  if less-than a-value b-value then
+    return -1
+
+  if greater-than a-value b-value then
+    return 1
+
+  # If they're equal then use the lexical ordering descending on the
+  # string representation itself.
+  return mul -1 (compare a b)
+
+
+def sort-hands (hands)
+  return sort.sort-with-compare compare-hands hands
+
+
+def main (args)
+  let data = (advent.read-all)
+
+  return 0
