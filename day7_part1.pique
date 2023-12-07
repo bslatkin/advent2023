@@ -1,6 +1,7 @@
 import "advent"
 import "functional"
 import "sort"
+import "string"
 
 
 def string-iter (the-string)
@@ -112,25 +113,56 @@ export get-precedence
 
 
 def compare-hands (a b)
-  let a-value = get-precedence a
-  let b-value = get-precedence b
+  let a-dict = parse-hand a
+  let b-dict = parse-hand b
+  let a-value = get-precedence a-dict
+  let b-value = get-precedence b-dict
 
   if less-than a-value b-value then
-    return -1
+    return 1
 
   if greater-than a-value b-value then
-    return 1
+    return -1
 
   # If they're equal then use the lexical ordering descending on the
   # string representation itself.
   return mul -1 (compare a b)
 
 
+export compare-hands
+
+
 def sort-hands (hands)
   return sort.sort-with-compare compare-hands hands
 
 
+def parse-line (line)
+  let hand-text bid-text = string.split line " "
+  let bid = string.string-to-integer bid-text
+  return list hand-text bid
+
+
 def main (args)
   let data = (advent.read-all)
+  let found = map parse-line data
+  let hands-to-bids = dict.from-list found
+  let hands bids = apply zip found
+  print hands
+  print bids
+  let sorted = sort-hands hands
+  let sorted-bids = map (lambda hand: dict.get hands-to-bids hand) sorted
+  print sorted
+  print sorted-bids
+
+  let winnings =
+    map
+      lambda i bid: mul (add i 1) bid
+      range (list.length sorted-bids)
+      sorted-bids
+  print winnings
+
+  let total = sum winnings
+  print total
+
 
   return 0

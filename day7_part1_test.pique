@@ -32,3 +32,12 @@ test-suite day7-part1-test
     assert equal precedence-a 5
     assert equal precedence-b 4
     assert equal precedence-c 1
+
+
+  test "Compare hands"
+    assert equal (compare-hands "AAB42" "ABBA2") -1
+    assert equal (compare-hands "ABBA2" "AAB42") 1
+    assert equal (compare-hands "ABBA2" "ABBA2") 0
+    assert equal (compare-hands "ABBA2" "ABBA1") -1
+    assert equal (compare-hands "ABBA2" "ABBA3") 1
+
