@@ -1,0 +1,86 @@
+
+
+def unpack-assignments (var-name field-names)
+  let prefixed =
+    map
+      lambda name: make-name var-name "." name
+      field-names
+  return
+    template
+      let { prefixed ... } = rest { var-name }
+
+
+defmacro declare-unpack (struct-name)
+  let func-name = make-name "unpack-" struct-name
+  let metadata-func = make-name "fields-" struct-name
+  return
+    template
+      defmacro { func-name } (var-name)
+        defvar field-names =
+          map
+            first
+            ({ metadata-func })
+        print "Field names are" field-names
+        return unpack-assignments var-name field-names
+
+
+struct params (transitions instructions goal)
+
+
+declare-unpack params
+
+
+let a = params (transitions = 1) (instructions = "two") (goal = 1.54321)
+
+unpack-params a
+
+print a.transitions
+print a.instructions
+print a.goal
+
+
+def main (args)
+  return 0
+
+
+# def step (all-transitions goal position instruction)
+#   let left right = dict.get all-transitions position
+#   let next-position =
+#     if equal instruction "L" then
+#       left
+#       else
+#       right
+#   return next-position
+
+
+# def instruction-cycle (all-transitions instruction-list position goal count)
+#   if equal position goal then
+#     return position count
+
+#   if not instruction-list then
+#     return position count
+
+#   let next-count = add count 1
+
+#   if equal next-position goal then
+#     return count
+
+#   return fold-instructions all-transitions
+
+
+
+# def codepoint-iter (the-string)
+#   let indexes = range (strlen the-string)
+#   let codepoints =
+#     map
+#       lambda i: substr the-string i (add i 1)
+#       indexes
+#   return codepoints
+
+
+
+
+
+
+
+
