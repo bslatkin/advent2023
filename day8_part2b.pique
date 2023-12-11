@@ -1,6 +1,7 @@
 import "advent"
 import "functional"
 import "list"
+import "set"
 import "string"
 
 
@@ -149,6 +150,32 @@ def get-frequency (fixed position)
 #   let unique = set.values (set.from-list frequencies)
 
 
+def is-factor (number maybe-factor)
+  let result remainder = div-mod number maybe-factor
+  if remainder then
+    return false
+
+  return result
+
+
+def factorize-helper (number last-try factors)
+  let next-try = add last-try 1
+  let double-try = mul next-try next-try
+  if greater-equal double-try number then
+    return prepend number factors
+
+  let divisor = is-factor number next-try
+  if not divisor then
+    return factorize-helper number next-try factors
+
+  return factorize-helper divisor 1 (prepend next-try factors)
+
+
+def factorize (number)
+  let factors = factorize-helper number 1 nil
+  let unique = set.from-list factors
+  return unique
+
 
 def main (args)
   let data = (advent.read-all)
@@ -177,7 +204,27 @@ def main (args)
 
   print "Frequencies are" frequencies
 
-  # let result = functional.fold mul frequencies 1
-  # print "LCD is" result
+  let factors =
+    map
+      factorize
+      frequencies
+
+  print "Factors are" factors
+
+  let combined =
+    functional.fold
+      set.union
+      rest factors
+      first factors
+
+  print "Combined are" combined
+
+  let result =
+    functional.fold
+      mul
+      set.values combined
+      1
+
+  print "Result" result
 
   return 0
