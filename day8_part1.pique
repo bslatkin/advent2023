@@ -1,3 +1,6 @@
+import "advent"
+import "functional"
+import "string"
 
 
 def unpack-assignments (var-name field-names)
@@ -20,62 +23,126 @@ defmacro declare-unpack (struct-name)
           map
             first
             ({ metadata-func })
-        print "Field names are" field-names
         return unpack-assignments var-name field-names
 
 
-struct params (transitions instructions goal)
+struct fixed-params (transitions instructions goal)
+struct changing-params (position count)
+
+declare-unpack fixed-params
+declare-unpack changing-params
 
 
-declare-unpack params
+
+def step-one (all-transitions position instruction)
+  let left right = dict.get all-transitions position
+  let next-position =
+    if equal instruction "L" then
+      left
+      else
+      right
+  print "Stepping" position "by" instruction "to" next-position
+  return next-position
 
 
-let a = params (transitions = 1) (instructions = "two") (goal = 1.54321)
+let FOLD_DONE = make-name "fold-done-" (generate-name)
 
-unpack-params a
 
-print a.transitions
-print a.instructions
-print a.goal
+def fold-done (count)
+  return list FOLD_DONE count
+
+
+def cycle-all (fixed changing instruction)
+  unpack-fixed-params fixed
+  unpack-changing-params changing
+
+  print "Position is" changing.position "Goal is" fixed.goal
+
+  if equal changing.position fixed.goal then
+    raise fold-done changing.count
+
+  let next-position = step-one fixed.transitions changing.position instruction
+  let next-count = add changing.count 1
+
+  return
+    update-changing-params
+      changing
+      position = next-position
+      count = next-count
+
+
+def loop-cycle (fixed changing)
+  # Infinite
+  let result =
+    functional.fold
+      functional.partial cycle-all fixed
+      fixed-params-instructions fixed
+      changing
+
+  return loop-cycle fixed result
+
+
+def codepoint-iter (the-string)
+  let indexes = range (strlen the-string)
+  let codepoints =
+    map
+      lambda i: substr the-string i (add i 1)
+      indexes
+  return codepoints
+
+
+def parse-transition-line (line)
+  # AAA = (BBB, CCC)
+  let before after = string.split line "="
+  let position = string.strip before
+  let left right = string.split after ","
+  let left-clean = substr left 2 (strlen left)
+  let right-clean = substr right 1 (sub (strlen right) 1)
+  print position left-clean right-clean
+  return list position (list left-clean right-clean)
+
+
+def parse-transitions (transition-lines)
+  let items =
+    map
+      parse-transition-line
+      transition-lines
+
+  let transitions = dict.from-list items
+  return transitions
 
 
 def main (args)
+  let data = (advent.read-all)
+  let instructions-line blank transition-lines ... = data
+  let instructions = codepoint-iter instructions-line
+  let transitions = parse-transitions transition-lines
+
+  let fixed =
+    fixed-params
+      transitions = transitions
+      instructions = instructions
+      goal = "ZZZ"
+
+  let changing =
+    changing-params
+      position = "AAA"
+      count = 0
+
+  let result =
+    guard
+      lambda e:
+        block
+          let error-kind count = error-value e
+          if not-equal error-kind FOLD_DONE then
+            raise e
+            else
+            return count
+      lambda: loop-cycle fixed changing
+
+  print result
+
   return 0
-
-
-# def step (all-transitions goal position instruction)
-#   let left right = dict.get all-transitions position
-#   let next-position =
-#     if equal instruction "L" then
-#       left
-#       else
-#       right
-#   return next-position
-
-
-# def instruction-cycle (all-transitions instruction-list position goal count)
-#   if equal position goal then
-#     return position count
-
-#   if not instruction-list then
-#     return position count
-
-#   let next-count = add count 1
-
-#   if equal next-position goal then
-#     return count
-
-#   return fold-instructions all-transitions
-
-
-
-# def codepoint-iter (the-string)
-#   let indexes = range (strlen the-string)
-#   let codepoints =
-#     map
-#       lambda i: substr the-string i (add i 1)
-#       indexes
-#   return codepoints
 
 
 
