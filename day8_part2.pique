@@ -92,6 +92,9 @@ def loop-cycle (fixed changing)
       fixed-params-instructions fixed
       changing
 
+  # print "After one cycle"
+  print result
+
   return loop-cycle fixed result
 
 
