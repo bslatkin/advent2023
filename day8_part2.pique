@@ -1,0 +1,166 @@
+import "advent"
+import "functional"
+import "list"
+import "string"
+
+
+def unpack-assignments (var-name field-names)
+  let prefixed =
+    map
+      lambda name: make-name var-name "." name
+      field-names
+  return
+    template
+      let { prefixed ... } = rest { var-name }
+
+
+defmacro declare-unpack (struct-name)
+  let func-name = make-name "unpack-" struct-name
+  let metadata-func = make-name "fields-" struct-name
+  return
+    template
+      defmacro { func-name } (var-name)
+        defvar field-names =
+          map
+            first
+            ({ metadata-func })
+        return unpack-assignments var-name field-names
+
+
+struct fixed-params (transitions instructions)
+struct changing-params (positions count)
+
+declare-unpack fixed-params
+declare-unpack changing-params
+
+
+
+def step-one (all-transitions instruction position)
+  let left right = dict.get all-transitions position
+  let next-position =
+    if equal instruction "L" then
+      left
+      else
+      right
+  # print "Stepping" position "by" instruction "to" next-position
+  return next-position
+
+
+let FOLD_DONE = make-name "fold-done-" (generate-name)
+
+
+def fold-done (count)
+  return list FOLD_DONE count
+
+
+def are-positions-ended (positions)
+  return
+    list.all-test
+      lambda s: string.ends-with s "Z"
+      positions
+
+
+def cycle-all (fixed changing instruction)
+  unpack-fixed-params fixed
+  unpack-changing-params changing
+
+  if are-positions-ended changing.positions then
+    raise fold-done changing.count
+
+  let next-positions =
+    map
+      functional.partial step-one fixed.transitions instruction
+      changing.positions
+
+  let next-count = add changing.count 1
+
+  if equal (mod next-count 1000) 0 then
+    print "Done with cycle" next-count
+
+  return
+    update-changing-params
+      changing
+      positions = next-positions
+      count = next-count
+
+
+def loop-cycle (fixed changing)
+  # Infinite
+  let result =
+    functional.fold
+      functional.partial cycle-all fixed
+      fixed-params-instructions fixed
+      changing
+
+  return loop-cycle fixed result
+
+
+def codepoint-iter (the-string)
+  let indexes = range (strlen the-string)
+  let codepoints =
+    map
+      lambda i: substr the-string i (add i 1)
+      indexes
+  return codepoints
+
+
+def parse-transition-line (line)
+  # AAA = (BBB, CCC)
+  let before after = string.split line "="
+  let position = string.strip before
+  let left right = string.split after ","
+  let left-clean = substr left 2 (strlen left)
+  let right-clean = substr right 1 (sub (strlen right) 1)
+  return list position (list left-clean right-clean)
+
+
+def parse-transitions (transition-lines)
+  let items =
+    map
+      parse-transition-line
+      transition-lines
+
+  let transitions = dict.from-list items
+  return transitions
+
+
+def starting-positions (all-positions)
+  return
+    filter
+      lambda s: string.ends-with s "A"
+      all-positions
+
+
+def main (args)
+  let data = (advent.read-all)
+  let instructions-line blank transition-lines ... = data
+  let instructions = codepoint-iter instructions-line
+  let transitions = parse-transitions transition-lines
+  let positions = starting-positions (dict.keys transitions)
+
+  print "Starting positions" positions
+
+  let fixed =
+    fixed-params
+      transitions = transitions
+      instructions = instructions
+
+  let changing =
+    changing-params
+      positions = positions
+      count = 0
+
+  let result =
+    guard
+      lambda e:
+        block
+          let error-kind count = error-value e
+          if not-equal error-kind FOLD_DONE then
+            raise e
+            else
+            return count
+      lambda: loop-cycle fixed changing
+
+  print result
+
+  return 0
