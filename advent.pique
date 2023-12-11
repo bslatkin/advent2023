@@ -1,4 +1,5 @@
 import "comparison"
+import "functional"
 import "io"
 import "list"
 import "tree"
@@ -78,3 +79,23 @@ def fast-dict-iterator (collection)
 
 
 export fast-dict-iterator
+
+
+def fast-dict-get (collection key)
+  return
+    list.second
+      tree.get-with-compare fast-dict-compare collection (list key nil)
+
+
+export fast-dict-get
+
+
+
+def fast-dict-keys (collection)
+  return
+    functional.map-iterators
+      lambda item: first item
+      tree.iterator collection
+
+
+export fast-dict-keys

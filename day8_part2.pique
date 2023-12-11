@@ -36,7 +36,7 @@ declare-unpack changing-params
 
 
 def step-one (all-transitions instruction position)
-  let left right = dict.get all-transitions position
+  let left right = advent.fast-dict-get all-transitions position
   let next-position =
     if equal instruction "L" then
       left
@@ -74,7 +74,7 @@ def cycle-all (fixed changing instruction)
 
   let next-count = add changing.count 1
 
-  if equal (mod next-count 1000) 0 then
+  if equal (mod next-count 10000) 0 then
     print "Done with cycle" next-count
 
   return
@@ -120,7 +120,7 @@ def parse-transitions (transition-lines)
       parse-transition-line
       transition-lines
 
-  let transitions = dict.from-list items
+  let transitions = advent.fast-dict-from-list items
   return transitions
 
 
@@ -136,7 +136,7 @@ def main (args)
   let instructions-line blank transition-lines ... = data
   let instructions = codepoint-iter instructions-line
   let transitions = parse-transitions transition-lines
-  let positions = starting-positions (dict.keys transitions)
+  let positions = starting-positions (advent.fast-dict-keys transitions)
 
   print "Starting positions" positions
 
