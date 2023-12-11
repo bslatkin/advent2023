@@ -143,11 +143,3 @@ def main (args)
   print result
 
   return 0
-
-
-
-
-
-
-
-
