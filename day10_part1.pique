@@ -12,6 +12,7 @@ do another pass through node coordiantes to find max distance number
 import "advent"
 import "functional"
 import "list"
+import "sort"
 
 
 struct position (coords pipe)
@@ -24,13 +25,13 @@ def get-grid (grid coords)
   return dict.get-or-default grid coords nil
 
 
-def get-grid-offset (grid coords offset-x offset-y)
+def offset-coords (coords offset-x offset-y)
   let adjusted-coords =
     list
       add (first coords) offset-x
       add (list.second coords) offset-y
+  return adjusted-coords
 
-  return get-grid grid adjusted-coords
 
 
 let NORTHWARD = "NORTH"
@@ -40,54 +41,74 @@ let WESTWARD = "WEST"
 
 
 def get-neighbors (grid coords)
-  let north = get-grid-offset grid coords 0 -1
-  let east = get-grid-offset grid coords 1 0
-  let south = get-grid-offset grid coords 0 1
-  let west = get-grid-offset grid coords -1 0
   let all-directions =
     list
-      if north then (transition (direction = NORTHWARD) (to = north))
-      if east then (transition (direction = EASTWARD) (to = east))
-      if south then (transition (direction = SOUTHWARD) (to = south))
-      if west then (transition (direction = WESTWARD) (to = west))
-  let valid = filter bool all-directions
+      transition (direction = NORTHWARD) (to = offset-coords coords 0 -1)
+      transition (direction = EASTWARD) (to = offset-coords coords 1 0)
+      transition (direction = SOUTHWARD) (to = offset-coords coords 0 1)
+      transition (direction = WESTWARD) (to = offset-coords coords -1 0)
+
+  let valid =
+    filter
+      lambda neighbor: not-equal (get-grid grid (transition-to neighbor)) nil
+      all-directions
+
   return valid
 
 
 let SUCCESSORS =
   dict.from-list
     list
-      list EASTWARD (list "J" "-" "7")
-      list WESTWARD (list "F" "-" "L")
-      list NORTHWARD (list "F" "|" "7")
-      list SOUTHWARD (list "J" "|" "L")
+      list EASTWARD (list "F" "-" "L")
+      list WESTWARD (list "J" "-" "7")
+      list NORTHWARD (list "J" "|" "L")
+      list SOUTHWARD (list "F" "|" "7")
+    #   list EASTWARD (list "J" "-" "7")
+    #   list WESTWARD (list "F" "-" "L")
+    #   list NORTHWARD (list "F" "|" "7")
+    #   list SOUTHWARD (list "J" "|" "L")
 
 
 def is-successor (previous-pipe direction)
+  if equal previous-pipe "S" then
+    return true
   let valid = dict.get SUCCESSORS direction
   print "checking successor for" direction previous-pipe "in" valid
   return list.contains valid previous-pipe
 
 
-def has-start (neighbors)
-  def check (item)
-    let ignore next-position = item
-    return equal (position-pipe next-position) "S"
+def minimize-keys (current new)
+  return
+    functional.fold
+      def helper (state item)
+        let key value = item
+        let previous = dict.get-or-default state key nil
+        if equal previous nil then
+          return dict.set state key value
 
-  return filter check neighbors
+        let lowest = min value previous
+        return dict.set state key lowest
+      dict.items new
+      current
 
 
-
-def step-one (grid distances seen coords pipe distance)
-
-
+def step-one (grid seen coords)
   let transitions = get-neighbors grid coords
+  let pipe = get-grid grid coords
+  let distance = dict.get seen coords
+  print "Trying" coords pipe "at" distance
 
-  if loop-closed seen coords distance then
+  let loop-closed =
+    if greater-than distance 1 then
+      list.any-test
+        lambda neighbor: equal (get-grid grid (transition-to neighbor)) "S"
+        transitions
+      else
+      false
 
-  if and (greater-than distance 2) (dict.contains seen
-
-  # check for start
+  if loop-closed then
+    print "Closed the loop after" distance
+    return seen
 
   let new-ground =
     filter
@@ -103,16 +124,29 @@ def step-one (grid distances seen coords pipe distance)
     print "Dead end"
     return nil
 
-  if not-equal (list.length valid) 1 then
-    print "Found positions" valid
-    raise "Only one valid next position should be possible"
+  def mover (next-move)
+    let next-coords = transition-to next-move
+    let next-pipe = get-grid grid next-coords
+    let next-distance = add distance 1
+    print "Moving from" coords pipe "to" next-coords next-pipe
+    let next-seen = dict.set seen next-coords next-distance
+    return step-one grid next-seen next-coords
 
-  let next-move = first valid
-  let next-coords = transition-to next-move
-  let next-pipe = dict.get grid next-coords
-  let next-distance = add distance 1
-  let next-seen = dict.set next-coords next-distance
-  return step-one grid seen next-coords next-pipe next-distance
+  if equal (list.length valid) 1 then
+    return mover (first valid)
+
+  print "Multiple moves" valid
+
+  # Multiple branches!
+  let all-seen = map mover valid
+
+  let minimums =
+    functional.fold
+      minimize-keys
+      all-seen
+      (dict.new)
+
+  return minimums
 
 
 def codepoint-iter (the-string)
@@ -134,6 +168,22 @@ def parse-line (y line)
   return valid
 
 
+def find-start-coords (grid)
+  let found =
+    map
+      def helper (item)
+        let coords value = item
+        if equal value "S" then
+          return coords
+          else
+          return nil
+      dict.items grid
+  let valid = filter bool found
+  if not valid then
+    raise "Could not find starting point"
+  return first valid
+
+
 def main (args)
   let data = (advent.read-all)
   let rows = functional.map-index parse-line data
@@ -143,35 +193,23 @@ def main (args)
       rows
       (dict.new)
 
-  let start-position =
-    position
-      coords = list 1 1
-      pipe = "S"
-
-  let neighbors = get-neighbors grid start-position
-  let attempt = transition-to (first neighbors)
-  print "trying" attempt
+  let coords = find-start-coords grid
 
   let result =
     step-one
       grid
-      dict.from (list (position-coords attempt) 1)
-      attempt
-  print result
+      dict.from (list coords 0)
+      coords
+
+  let inverted =
+    map
+    def helper (item)
+      let key value = item
+      return list value key
+    dict.items result
+
+  let sorted = sort.sort-with-compare sort.descending inverted
+  let top = first sorted
+  print top
 
   return 0
-
-
-
-# def search-one (grid start-coords)
-#   let start-position =
-#     position
-#       coords = start-coords
-#       pipe = get-grid start-coords
-
-#   return step-one grid (list start-position)
-
-
-
-
-
