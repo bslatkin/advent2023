@@ -36,13 +36,24 @@ def get-grid-offset (grid coords offset-x offset-y)
   return get-grid grid adjusted-coords
 
 
+let NORTHWARD = "NORTH"
+let EASTWARD = "EAST"
+let SOUTHWARD = "SOUTH"
+let WESTWARD = "WEST"
+
+
 def get-neighbors (grid current-position)
   let coords = position-coords current-position
-  let north = get-grid-offset grid coords 0 1
+  let north = get-grid-offset grid coords 0 -1
   let east = get-grid-offset grid coords 1 0
-  let south = get-grid-offset grid coords 0 -1
+  let south = get-grid-offset grid coords 0 1
   let west = get-grid-offset grid coords -1 0
-  let all-directions = list north east south west
+  let all-directions =
+    list
+      if north then (list NORTHWARD north)
+      if east then (list EASTWARD east)
+      if south then (list SOUTHWARD south)
+      if west then (list WESTWARD west)
   let valid = filter bool all-directions
   return valid
 
@@ -50,49 +61,40 @@ def get-neighbors (grid current-position)
 let SUCCESSORS =
   dict.from-list
     list
-      list "-" "-"
-      list "|" "|"
-      list "-" "7"
-      list "|" "J"
-      list "J" "|"
-      list "-" "J"
-      list "J" "-"
-      list "-" "L"
-      list "L" "-"
+      list EASTWARD (list "J" "-" "7")
+      list WESTWARD (list "F" "-" "L")
+      list NORTHWARD (list "F" "|" "7")
+      list SOUTHWARD (list "J" "|" "L")
 
-      # .S-7.
-      # .|.|.
-      # .L-J.
+      # list EASTWARD (list "L" "-" "F")
+      # list WESTWARD (list "J" "-" "7")
+      # list NORTHWARD (list "J" "|" "L")
+      # list SOUTHWARD (list "7" "|" "F")
 
 
-def is-successor (previous next)
-  if equal next "." then
-    return false
+def is-successor (direction current)
+  let valid = dict.get SUCCESSORS direction
+  print "checking successor for" direction current "in" valid
+  return list.contains valid (position-pipe current)
 
-  if equal previous "S" then
+
+def fit-neighbor (seen neighbors current-position)
+  def filter-one (item)
+    let direction next-position = item
+
+    if equal next-position current-position then
+      return false
+
+    if not (is-successor direction next-position) then
+      return false
+
     return true
 
-  switch
-    case (equal previous "-")
+  let new-ground = filter filter-one neighbors
 
-
-def fit-neighbor (grid seen current-position)
-  let neighbors = get-neighbors grid current-position
-
-  let start =
-    filter
-      lambda other: equal (position-pipe other) "S"
-      neighbors
-
-  if start then
-    return first start
-
-  let new-ground =
-    filter
-      lambda other: not (dict.contains seen other)
-      neighbors
-
-  # XXX filter out by compatibility with current position
+  if not new-ground then
+    print "Dead end"
+    return nil
 
   if not-equal (list.length new-ground) 1 then
     print "Found positions" new-ground
@@ -101,15 +103,44 @@ def fit-neighbor (grid seen current-position)
   return first new-ground
 
 
-def step-one (grid seen current-position current-distance)
-  let next-position = fit-neighbor grid seen current-position
+def has-start (neighbors)
+  def check (item)
+    let ignore next-position = item
+    return equal (position-pipe next-position) "S"
 
-  if equal (position-pipe next-position) "S" then
+  return filter check neighbors
+
+
+def save-distance (seen current-position current-distance)
+  let coords = position-coords current-position
+  let previous-distance = dict.get-or-default seen coords nil
+
+  if
+    or
+      equal previous-distance nil
+      less-than current-distance previous-distance
+    then
+    return dict.set seen coords current-distance
+    else
     return seen
 
+
+def step-one (grid seen current-position current-distance)
+  let neighbors = get-neighbors grid current-position
+
+  if and (greater-equal current-distance 3) (has-start neighbors) then
+    return seen
+
+  let next-position = fit-neighbor seen neighbors current-position
+  if not next-position then
+    return nil
+
+  print "found next position" next-position
+  let next-x = list.second next-position
+
   let next-distance = add current-distance 1
-  let next-seen = dict.set seen (position-coords next-position) next-distance
-  return step-one grid next-seen next-position next-distance
+  let next-seen = save-distance seen next-x next-distance
+  return step-one grid next-seen next-x next-distance
 
 
 def codepoint-iter (the-string)
@@ -125,9 +156,10 @@ def parse-line (y line)
   let codepoints = codepoint-iter line
   let positions =
     functional.map-index
-      lambda x pipe: list (list x y) pipe
+      lambda x pipe: if not-equal pipe "." then (list (list x y) pipe) else nil
       codepoints
-  return positions
+  let valid = filter bool positions
+  return valid
 
 
 def main (args)
@@ -144,7 +176,16 @@ def main (args)
       coords = list 1 1
       pipe = "S"
 
-  let result = step-one grid (dict.new) start-position 0
+  let start-neighbors = get-neighbors grid start-position
+  let first-neighb = list.second (first start-neighbors)
+  print "trying" first-neighb
+
+  let result =
+    step-one
+      grid
+      dict.from (list (position-coords first-neighb) 1)
+      first-neighb
+      0
   print result
 
   return 0
