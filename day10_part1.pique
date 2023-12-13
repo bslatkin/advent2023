@@ -1,0 +1,165 @@
+"""
+depth first search
+start with adjacent pipes n/s/e/w
+check if they are properly aligned or skip
+add them to the queue to be investigated
+write down their distance, but connected state is none
+also record the path that it takes to get to each node
+when you find the S again after going through the loop, you'll have the whole loop history and can then terminate with all of the node IDs
+do another pass through node coordiantes to find max distance number
+"""
+
+import "advent"
+import "functional"
+import "list"
+
+
+struct position (coords pipe)
+
+
+def get-grid (grid coords)
+  let pipe = dict.get-or-default grid coords nil
+  if not pipe then
+    return nil
+
+  return position
+    coords = coords
+    pipe = pipe
+
+
+def get-grid-offset (grid coords offset-x offset-y)
+  let adjusted-coords =
+    list
+      add (first coords) offset-x
+      add (list.second coords) offset-y
+
+  return get-grid grid adjusted-coords
+
+
+def get-neighbors (grid current-position)
+  let coords = position-coords current-position
+  let north = get-grid-offset grid coords 0 1
+  let east = get-grid-offset grid coords 1 0
+  let south = get-grid-offset grid coords 0 -1
+  let west = get-grid-offset grid coords -1 0
+  let all-directions = list north east south west
+  let valid = filter bool all-directions
+  return valid
+
+
+let SUCCESSORS =
+  dict.from-list
+    list
+      list "-" "-"
+      list "|" "|"
+      list "-" "7"
+      list "|" "J"
+      list "J" "|"
+      list "-" "J"
+      list "J" "-"
+      list "-" "L"
+      list "L" "-"
+
+      # .S-7.
+      # .|.|.
+      # .L-J.
+
+
+def is-successor (previous next)
+  if equal next "." then
+    return false
+
+  if equal previous "S" then
+    return true
+
+  switch
+    case (equal previous "-")
+
+
+def fit-neighbor (grid seen current-position)
+  let neighbors = get-neighbors grid current-position
+
+  let start =
+    filter
+      lambda other: equal (position-pipe other) "S"
+      neighbors
+
+  if start then
+    return first start
+
+  let new-ground =
+    filter
+      lambda other: not (dict.contains seen other)
+      neighbors
+
+  # XXX filter out by compatibility with current position
+
+  if not-equal (list.length new-ground) 1 then
+    print "Found positions" new-ground
+    raise "Only one valid next position should be possible"
+
+  return first new-ground
+
+
+def step-one (grid seen current-position current-distance)
+  let next-position = fit-neighbor grid seen current-position
+
+  if equal (position-pipe next-position) "S" then
+    return seen
+
+  let next-distance = add current-distance 1
+  let next-seen = dict.set seen (position-coords next-position) next-distance
+  return step-one grid next-seen next-position next-distance
+
+
+def codepoint-iter (the-string)
+  let indexes = range (strlen the-string)
+  let codepoints =
+    map
+      lambda i: substr the-string i (add i 1)
+      indexes
+  return codepoints
+
+
+def parse-line (y line)
+  let codepoints = codepoint-iter line
+  let positions =
+    functional.map-index
+      lambda x pipe: list (list x y) pipe
+      codepoints
+  return positions
+
+
+def main (args)
+  let data = (advent.read-all)
+  let rows = functional.map-index parse-line data
+  let grid =
+    functional.fold
+      lambda state items: dict.update-items state items
+      rows
+      (dict.new)
+
+  let start-position =
+    position
+      coords = list 1 1
+      pipe = "S"
+
+  let result = step-one grid (dict.new) start-position 0
+  print result
+
+  return 0
+
+
+
+# def search-one (grid start-coords)
+#   let start-position =
+#     position
+#       coords = start-coords
+#       pipe = get-grid start-coords
+
+#   return step-one grid (list start-position)
+
+
+
+
+
