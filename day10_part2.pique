@@ -1,0 +1,396 @@
+import "advent"
+import "functional"
+import "list"
+import "sort"
+
+
+struct position (coords pipe)
+
+
+struct transition (direction to)
+
+
+def get-grid (grid coords)
+  return advent.fast-dict-get-or-default grid coords nil
+
+
+def offset-coords (coords offset-x offset-y)
+  let adjusted-coords =
+    list
+      add (first coords) offset-x
+      add (list.second coords) offset-y
+  return adjusted-coords
+
+
+
+let NORTHWARD = "NORTH"
+let EASTWARD = "EAST"
+let SOUTHWARD = "SOUTH"
+let WESTWARD = "WEST"
+
+
+def get-neighbors (grid coords)
+  let all-directions =
+    list
+      transition (direction = NORTHWARD) (to = offset-coords coords 0 -1)
+      transition (direction = EASTWARD) (to = offset-coords coords 1 0)
+      transition (direction = SOUTHWARD) (to = offset-coords coords 0 1)
+      transition (direction = WESTWARD) (to = offset-coords coords -1 0)
+
+  let valid =
+    filter
+      lambda neighbor: not-equal (get-grid grid (transition-to neighbor)) nil
+      all-directions
+
+  return valid
+
+
+# Cartesian product of pipe types, directions, pipe types
+let ALLOWED_MOVES =
+  list
+    list "-" EASTWARD "-"
+    # list "-" EASTWARD "|"
+    # list "-" EASTWARD "L"
+    # list "-" EASTWARD "F"
+    list "-" EASTWARD "7"
+    list "-" EASTWARD "J"
+    list "-" EASTWARD "S"
+    list "-" WESTWARD "-"
+    # list "-" WESTWARD "|"
+    list "-" WESTWARD "L"
+    list "-" WESTWARD "F"
+    # list "-" WESTWARD "7"
+    # list "-" WESTWARD "J"
+    list "-" WESTWARD "S"
+    # list "-" NORTHWARD "-"
+    # list "-" NORTHWARD "|"
+    # list "-" NORTHWARD "L"
+    # list "-" NORTHWARD "F"
+    # list "-" NORTHWARD "7"
+    # list "-" NORTHWARD "J"
+    # list "-" NORTHWARD "S"
+    # list "-" SOUTHWARD "-"
+    # list "-" SOUTHWARD "|"
+    # list "-" SOUTHWARD "L"
+    # list "-" SOUTHWARD "F"
+    # list "-" SOUTHWARD "7"
+    # list "-" SOUTHWARD "J"
+    # list "-" SOUTHWARD "S"
+    # list "|" EASTWARD "-"
+    # list "|" EASTWARD "|"
+    # list "|" EASTWARD "L"
+    # list "|" EASTWARD "F"
+    # list "|" EASTWARD "7"
+    # list "|" EASTWARD "J"
+    # list "|" EASTWARD "S"
+    # list "|" WESTWARD "-"
+    # list "|" WESTWARD "|"
+    # list "|" WESTWARD "L"
+    # list "|" WESTWARD "F"
+    # list "|" WESTWARD "7"
+    # list "|" WESTWARD "J"
+    # list "|" WESTWARD "S"
+    # list "|" NORTHWARD "-"
+    list "|" NORTHWARD "|"
+    # list "|" NORTHWARD "L"
+    list "|" NORTHWARD "F"
+    list "|" NORTHWARD "7"
+    # list "|" NORTHWARD "J"
+    list "|" NORTHWARD "S"
+    # list "|" SOUTHWARD "-"
+    list "|" SOUTHWARD "|"
+    list "|" SOUTHWARD "L"
+    # list "|" SOUTHWARD "F"
+    # list "|" SOUTHWARD "7"
+    list "|" SOUTHWARD "J"
+    list "|" SOUTHWARD "S"
+    list "L" EASTWARD "-"
+    # list "L" EASTWARD "|"
+    # list "L" EASTWARD "L"
+    # list "L" EASTWARD "F"
+    list "L" EASTWARD "7"
+    list "L" EASTWARD "J"
+    list "L" EASTWARD "S"
+    # list "L" WESTWARD "-"
+    # list "L" WESTWARD "|"
+    # list "L" WESTWARD "L"
+    # list "L" WESTWARD "F"
+    # list "L" WESTWARD "7"
+    # list "L" WESTWARD "J"
+    # list "L" WESTWARD "S"
+    # list "L" NORTHWARD "-"
+    list "L" NORTHWARD "|"
+    # list "L" NORTHWARD "L"
+    list "L" NORTHWARD "F"
+    list "L" NORTHWARD "7"
+    # list "L" NORTHWARD "J"
+    list "L" NORTHWARD "S"
+    # list "L" SOUTHWARD "-"
+    # list "L" SOUTHWARD "|"
+    # list "L" SOUTHWARD "L"
+    # list "L" SOUTHWARD "F"
+    # list "L" SOUTHWARD "7"
+    # list "L" SOUTHWARD "J"
+    # list "L" SOUTHWARD "S"
+    list "F" EASTWARD "-"
+    # list "F" EASTWARD "|"
+    # list "F" EASTWARD "L"
+    # list "F" EASTWARD "F"
+    list "F" EASTWARD "7"
+    list "F" EASTWARD "J"
+    list "F" EASTWARD "S"
+    # list "F" WESTWARD "-"
+    # list "F" WESTWARD "|"
+    # list "F" WESTWARD "L"
+    # list "F" WESTWARD "F"
+    # list "F" WESTWARD "7"
+    # list "F" WESTWARD "J"
+    # list "F" WESTWARD "S"
+    # list "F" NORTHWARD "-"
+    # list "F" NORTHWARD "|"
+    # list "F" NORTHWARD "L"
+    # list "F" NORTHWARD "F"
+    # list "F" NORTHWARD "7"
+    # list "F" NORTHWARD "J"
+    # list "F" NORTHWARD "S"
+    # list "F" SOUTHWARD "-"
+    list "F" SOUTHWARD "|"
+    list "F" SOUTHWARD "L"
+    # list "F" SOUTHWARD "F"
+    # list "F" SOUTHWARD "7"
+    list "F" SOUTHWARD "J"
+    list "F" SOUTHWARD "S"
+    # list "7" EASTWARD "-"
+    # list "7" EASTWARD "|"
+    # list "7" EASTWARD "L"
+    # list "7" EASTWARD "F"
+    # list "7" EASTWARD "7"
+    # list "7" EASTWARD "J"
+    # list "7" EASTWARD "S"
+    list "7" WESTWARD "-"
+    # list "7" WESTWARD "|"
+    list "7" WESTWARD "L"
+    list "7" WESTWARD "F"
+    # list "7" WESTWARD "7"
+    # list "7" WESTWARD "J"
+    list "7" WESTWARD "S"
+    # list "7" NORTHWARD "-"
+    # list "7" NORTHWARD "|"
+    # list "7" NORTHWARD "L"
+    # list "7" NORTHWARD "F"
+    # list "7" NORTHWARD "7"
+    # list "7" NORTHWARD "J"
+    # list "7" NORTHWARD "S"
+    # list "7" SOUTHWARD "-"
+    list "7" SOUTHWARD "|"
+    list "7" SOUTHWARD "L"
+    # list "7" SOUTHWARD "F"
+    # list "7" SOUTHWARD "7"
+    list "7" SOUTHWARD "J"
+    list "7" SOUTHWARD "S"
+    # list "J" EASTWARD "-"
+    # list "J" EASTWARD "|"
+    # list "J" EASTWARD "L"
+    # list "J" EASTWARD "F"
+    # list "J" EASTWARD "7"
+    # list "J" EASTWARD "J"
+    # list "J" EASTWARD "S"
+    list "J" WESTWARD "-"
+    # list "J" WESTWARD "|"
+    list "J" WESTWARD "L"
+    list "J" WESTWARD "F"
+    # list "J" WESTWARD "7"
+    # list "J" WESTWARD "J"
+    list "J" WESTWARD "S"
+    # list "J" NORTHWARD "-"
+    list "J" NORTHWARD "|"
+    # list "J" NORTHWARD "L"
+    list "J" NORTHWARD "F"
+    list "J" NORTHWARD "7"
+    # list "J" NORTHWARD "J"
+    list "J" NORTHWARD "S"
+    # list "J" SOUTHWARD "-"
+    # list "J" SOUTHWARD "|"
+    # list "J" SOUTHWARD "L"
+    # list "J" SOUTHWARD "F"
+    # list "J" SOUTHWARD "7"
+    # list "J" SOUTHWARD "J"
+    # list "J" SOUTHWARD "S"
+    list "S" EASTWARD "-"
+    # list "S" EASTWARD "|"
+    # list "S" EASTWARD "L"
+    # list "S" EASTWARD "F"
+    list "S" EASTWARD "7"
+    list "S" EASTWARD "J"
+    # list "S" EASTWARD "S"
+    list "S" WESTWARD "-"
+    # list "S" WESTWARD "|"
+    list "S" WESTWARD "L"
+    list "S" WESTWARD "F"
+    # list "S" WESTWARD "7"
+    # list "S" WESTWARD "J"
+    # list "S" WESTWARD "S"
+    # list "S" NORTHWARD "-"
+    list "S" NORTHWARD "|"
+    # list "S" NORTHWARD "L"
+    list "S" NORTHWARD "F"
+    list "S" NORTHWARD "7"
+    # list "S" NORTHWARD "J"
+    # list "S" NORTHWARD "S"
+    # list "S" SOUTHWARD "-"
+    list "S" SOUTHWARD "|"
+    list "S" SOUTHWARD "L"
+    # list "S" SOUTHWARD "F"
+    # list "S" SOUTHWARD "7"
+    list "S" SOUTHWARD "J"
+    # list "S" SOUTHWARD "S"
+
+
+def is-allowed (previous-pipe direction next-pipe)
+  let move = list previous-pipe direction next-pipe
+  print "checking allowed move" move
+  return list.contains ALLOWED_MOVES move
+
+
+def minimize-keys (current new)
+  return
+    functional.fold
+      def helper (state item)
+        let key value = item
+        let previous = dict.get-or-default state key nil
+        if equal previous nil then
+          return dict.set state key value
+
+        let lowest = min value previous
+        return dict.set state key lowest
+      dict.items new
+      current
+
+
+def step-one (grid seen coords)
+  let transitions = get-neighbors grid coords
+  let pipe = get-grid grid coords
+  let distance = dict.get seen coords
+  print "Trying" coords pipe "at" distance
+
+  let valid =
+    filter
+      lambda neighbor:
+        is-allowed
+          pipe
+          transition-direction neighbor
+          get-grid grid (transition-to neighbor)
+      transitions
+
+  let loop-closed =
+    if greater-than distance 1 then
+      list.any-test
+        lambda neighbor: equal (get-grid grid (transition-to neighbor)) "S"
+        valid
+      else
+      false
+
+  if loop-closed  then
+    print "Closed the loop after" distance
+    return seen
+
+  let new-ground =
+    filter
+      lambda neighbor: not (dict.contains seen (transition-to neighbor))
+      valid
+
+  if not new-ground then
+    print "Dead end"
+    return nil
+
+  def mover (next-move)
+    let next-coords = transition-to next-move
+    let next-pipe = get-grid grid next-coords
+    let next-distance = add distance 1
+    print "Moving from" coords pipe "to" next-coords next-pipe
+    let next-seen = dict.set seen next-coords next-distance
+    return step-one grid next-seen next-coords
+
+  if equal (list.length new-ground) 1 then
+    return mover (first new-ground)
+
+  print "Multiple moves" new-ground
+
+  # Multiple branches!
+  let all-seen = map mover new-ground
+
+  let minimums =
+    functional.fold
+      minimize-keys
+      all-seen
+      (dict.new)
+
+  return minimums
+
+
+def codepoint-iter (the-string)
+  let indexes = range (strlen the-string)
+  let codepoints =
+    map
+      lambda i: substr the-string i (add i 1)
+      indexes
+  return codepoints
+
+
+def parse-line (y line)
+  let codepoints = codepoint-iter line
+  let positions =
+    functional.map-index
+      lambda x pipe: if not-equal pipe "." then (list (list x y) pipe) else nil
+      codepoints
+  let valid = filter bool positions
+  return valid
+
+
+def find-start-coords (grid)
+  let found =
+    functional.map-iterators
+      def helper (item)
+        let coords value = item
+        if equal value "S" then
+          return coords
+          else
+          return nil
+      advent.fast-dict-iterator grid
+  let valid = filter bool found
+  if not valid then
+    raise "Could not find starting point"
+  return first valid
+
+
+def main (args)
+  let data = (advent.read-all)
+  let rows = functional.map-index parse-line data
+  let grid =
+    functional.fold
+      lambda state items: advent.fast-dict-update-from-list state items
+      rows
+      (advent.fast-dict-new)
+
+  let coords = find-start-coords grid
+
+  print "Start at" coords
+
+  let result =
+    step-one
+      grid
+      dict.from (list coords 0)
+      coords
+
+  let inverted =
+    map
+    def helper (item)
+      let key value = item
+      return list value key
+    dict.items result
+
+  let sorted = sort.sort-with-compare sort.descending inverted
+  let top = first sorted
+  print top
+
+  return 0
