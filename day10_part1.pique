@@ -22,7 +22,7 @@ struct transition (direction to)
 
 
 def get-grid (grid coords)
-  return dict.get-or-default grid coords nil
+  return advent.fast-dict-get-or-default grid coords nil
 
 
 def offset-coords (coords offset-x offset-y)
@@ -170,14 +170,14 @@ def parse-line (y line)
 
 def find-start-coords (grid)
   let found =
-    map
+    functional.map-iterators
       def helper (item)
         let coords value = item
         if equal value "S" then
           return coords
           else
           return nil
-      dict.items grid
+      advent.fast-dict-iterator grid
   let valid = filter bool found
   if not valid then
     raise "Could not find starting point"
@@ -189,11 +189,13 @@ def main (args)
   let rows = functional.map-index parse-line data
   let grid =
     functional.fold
-      lambda state items: dict.update-items state items
+      lambda state items: advent.fast-dict-update-from-list state items
       rows
-      (dict.new)
+      (advent.fast-dict-new)
 
   let coords = find-start-coords grid
+
+  print "start at" coords
 
   let result =
     step-one

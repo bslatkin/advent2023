@@ -47,6 +47,13 @@ def fast-dict-from-list (items)
 export fast-dict-from-list
 
 
+def fast-dict-update-from-list (collection items)
+  return tree.update-from-list-with-compare fast-dict-compare collection items
+
+
+export fast-dict-update-from-list
+
+
 def fast-dict-new ()
   return (tree.new)
 
