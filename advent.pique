@@ -106,3 +106,14 @@ def fast-dict-keys (collection)
 
 
 export fast-dict-keys
+
+
+def fast-dict-size (collection)
+  let items =
+    functional.map-iterators
+      lambda item: item
+      tree.iterator collection
+  return list.length items
+
+
+export fast-dict-size

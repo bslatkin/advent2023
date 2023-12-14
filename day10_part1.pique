@@ -56,25 +56,211 @@ def get-neighbors (grid coords)
   return valid
 
 
-let SUCCESSORS =
-  dict.from-list
-    list
-      list EASTWARD (list "F" "-" "L")
-      list WESTWARD (list "J" "-" "7")
-      list NORTHWARD (list "J" "|" "L")
-      list SOUTHWARD (list "F" "|" "7")
-    #   list EASTWARD (list "J" "-" "7")
-    #   list WESTWARD (list "F" "-" "L")
-    #   list NORTHWARD (list "F" "|" "7")
-    #   list SOUTHWARD (list "J" "|" "L")
+# Cartesian product of pipe types, directions, pipe types
+let ALLOWED_MOVES =
+  list
+    list "-" EASTWARD "-"
+    # list "-" EASTWARD "|"
+    # list "-" EASTWARD "L"
+    # list "-" EASTWARD "F"
+    list "-" EASTWARD "7"
+    list "-" EASTWARD "J"
+    list "-" EASTWARD "S"
+    list "-" WESTWARD "-"
+    # list "-" WESTWARD "|"
+    list "-" WESTWARD "L"
+    list "-" WESTWARD "F"
+    # list "-" WESTWARD "7"
+    # list "-" WESTWARD "J"
+    list "-" WESTWARD "S"
+    # list "-" NORTHWARD "-"
+    # list "-" NORTHWARD "|"
+    # list "-" NORTHWARD "L"
+    # list "-" NORTHWARD "F"
+    # list "-" NORTHWARD "7"
+    # list "-" NORTHWARD "J"
+    # list "-" NORTHWARD "S"
+    # list "-" SOUTHWARD "-"
+    # list "-" SOUTHWARD "|"
+    # list "-" SOUTHWARD "L"
+    # list "-" SOUTHWARD "F"
+    # list "-" SOUTHWARD "7"
+    # list "-" SOUTHWARD "J"
+    # list "-" SOUTHWARD "S"
+    # list "|" EASTWARD "-"
+    # list "|" EASTWARD "|"
+    # list "|" EASTWARD "L"
+    # list "|" EASTWARD "F"
+    # list "|" EASTWARD "7"
+    # list "|" EASTWARD "J"
+    # list "|" EASTWARD "S"
+    # list "|" WESTWARD "-"
+    # list "|" WESTWARD "|"
+    # list "|" WESTWARD "L"
+    # list "|" WESTWARD "F"
+    # list "|" WESTWARD "7"
+    # list "|" WESTWARD "J"
+    # list "|" WESTWARD "S"
+    # list "|" NORTHWARD "-"
+    list "|" NORTHWARD "|"
+    # list "|" NORTHWARD "L"
+    list "|" NORTHWARD "F"
+    list "|" NORTHWARD "7"
+    # list "|" NORTHWARD "J"
+    list "|" NORTHWARD "S"
+    # list "|" SOUTHWARD "-"
+    list "|" SOUTHWARD "|"
+    list "|" SOUTHWARD "L"
+    # list "|" SOUTHWARD "F"
+    # list "|" SOUTHWARD "7"
+    list "|" SOUTHWARD "J"
+    list "|" SOUTHWARD "S"
+    list "L" EASTWARD "-"
+    # list "L" EASTWARD "|"
+    # list "L" EASTWARD "L"
+    # list "L" EASTWARD "F"
+    list "L" EASTWARD "7"
+    list "L" EASTWARD "J"
+    list "L" EASTWARD "S"
+    # list "L" WESTWARD "-"
+    # list "L" WESTWARD "|"
+    # list "L" WESTWARD "L"
+    # list "L" WESTWARD "F"
+    # list "L" WESTWARD "7"
+    # list "L" WESTWARD "J"
+    # list "L" WESTWARD "S"
+    # list "L" NORTHWARD "-"
+    list "L" NORTHWARD "|"
+    # list "L" NORTHWARD "L"
+    list "L" NORTHWARD "F"
+    list "L" NORTHWARD "7"
+    # list "L" NORTHWARD "J"
+    list "L" NORTHWARD "S"
+    # list "L" SOUTHWARD "-"
+    # list "L" SOUTHWARD "|"
+    # list "L" SOUTHWARD "L"
+    # list "L" SOUTHWARD "F"
+    # list "L" SOUTHWARD "7"
+    # list "L" SOUTHWARD "J"
+    # list "L" SOUTHWARD "S"
+    list "F" EASTWARD "-"
+    # list "F" EASTWARD "|"
+    # list "F" EASTWARD "L"
+    # list "F" EASTWARD "F"
+    list "F" EASTWARD "7"
+    list "F" EASTWARD "J"
+    list "F" EASTWARD "S"
+    # list "F" WESTWARD "-"
+    # list "F" WESTWARD "|"
+    # list "F" WESTWARD "L"
+    # list "F" WESTWARD "F"
+    # list "F" WESTWARD "7"
+    # list "F" WESTWARD "J"
+    # list "F" WESTWARD "S"
+    # list "F" NORTHWARD "-"
+    # list "F" NORTHWARD "|"
+    # list "F" NORTHWARD "L"
+    # list "F" NORTHWARD "F"
+    # list "F" NORTHWARD "7"
+    # list "F" NORTHWARD "J"
+    # list "F" NORTHWARD "S"
+    # list "F" SOUTHWARD "-"
+    list "F" SOUTHWARD "|"
+    list "F" SOUTHWARD "L"
+    # list "F" SOUTHWARD "F"
+    # list "F" SOUTHWARD "7"
+    list "F" SOUTHWARD "J"
+    list "F" SOUTHWARD "S"
+    # list "7" EASTWARD "-"
+    # list "7" EASTWARD "|"
+    # list "7" EASTWARD "L"
+    # list "7" EASTWARD "F"
+    # list "7" EASTWARD "7"
+    # list "7" EASTWARD "J"
+    # list "7" EASTWARD "S"
+    list "7" WESTWARD "-"
+    # list "7" WESTWARD "|"
+    list "7" WESTWARD "L"
+    list "7" WESTWARD "F"
+    # list "7" WESTWARD "7"
+    # list "7" WESTWARD "J"
+    list "7" WESTWARD "S"
+    # list "7" NORTHWARD "-"
+    # list "7" NORTHWARD "|"
+    # list "7" NORTHWARD "L"
+    # list "7" NORTHWARD "F"
+    # list "7" NORTHWARD "7"
+    # list "7" NORTHWARD "J"
+    # list "7" NORTHWARD "S"
+    # list "7" SOUTHWARD "-"
+    list "7" SOUTHWARD "|"
+    list "7" SOUTHWARD "L"
+    # list "7" SOUTHWARD "F"
+    # list "7" SOUTHWARD "7"
+    list "7" SOUTHWARD "J"
+    list "7" SOUTHWARD "S"
+    # list "J" EASTWARD "-"
+    # list "J" EASTWARD "|"
+    # list "J" EASTWARD "L"
+    # list "J" EASTWARD "F"
+    # list "J" EASTWARD "7"
+    # list "J" EASTWARD "J"
+    # list "J" EASTWARD "S"
+    list "J" WESTWARD "-"
+    # list "J" WESTWARD "|"
+    list "J" WESTWARD "L"
+    list "J" WESTWARD "F"
+    # list "J" WESTWARD "7"
+    # list "J" WESTWARD "J"
+    list "J" WESTWARD "S"
+    # list "J" NORTHWARD "-"
+    list "J" NORTHWARD "|"
+    # list "J" NORTHWARD "L"
+    list "J" NORTHWARD "F"
+    list "J" NORTHWARD "7"
+    # list "J" NORTHWARD "J"
+    list "J" NORTHWARD "S"
+    # list "J" SOUTHWARD "-"
+    # list "J" SOUTHWARD "|"
+    # list "J" SOUTHWARD "L"
+    # list "J" SOUTHWARD "F"
+    # list "J" SOUTHWARD "7"
+    # list "J" SOUTHWARD "J"
+    # list "J" SOUTHWARD "S"
+    list "S" EASTWARD "-"
+    # list "S" EASTWARD "|"
+    # list "S" EASTWARD "L"
+    # list "S" EASTWARD "F"
+    list "S" EASTWARD "7"
+    list "S" EASTWARD "J"
+    # list "S" EASTWARD "S"
+    list "S" WESTWARD "-"
+    # list "S" WESTWARD "|"
+    list "S" WESTWARD "L"
+    list "S" WESTWARD "F"
+    # list "S" WESTWARD "7"
+    # list "S" WESTWARD "J"
+    # list "S" WESTWARD "S"
+    # list "S" NORTHWARD "-"
+    list "S" NORTHWARD "|"
+    # list "S" NORTHWARD "L"
+    list "S" NORTHWARD "F"
+    list "S" NORTHWARD "7"
+    # list "S" NORTHWARD "J"
+    # list "S" NORTHWARD "S"
+    # list "S" SOUTHWARD "-"
+    list "S" SOUTHWARD "|"
+    list "S" SOUTHWARD "L"
+    # list "S" SOUTHWARD "F"
+    # list "S" SOUTHWARD "7"
+    list "S" SOUTHWARD "J"
+    # list "S" SOUTHWARD "S"
 
 
-def is-successor (previous-pipe direction)
-  if equal previous-pipe "S" then
-    return true
-  let valid = dict.get SUCCESSORS direction
-  print "checking successor for" direction previous-pipe "in" valid
-  return list.contains valid previous-pipe
+def is-allowed (previous-pipe direction next-pipe)
+  let move = list previous-pipe direction next-pipe
+  print "checking allowed move" move
+  return list.contains ALLOWED_MOVES move
 
 
 def minimize-keys (current new)
@@ -98,29 +284,36 @@ def step-one (grid seen coords)
   let distance = dict.get seen coords
   print "Trying" coords pipe "at" distance
 
+  # if equal (dict.size seen) 20 then
+  #   return nil
+
+  let valid =
+    filter
+      lambda neighbor:
+        is-allowed
+          pipe
+          transition-direction neighbor
+          get-grid grid (transition-to neighbor)
+      transitions
+
   let loop-closed =
     if greater-than distance 1 then
       list.any-test
         lambda neighbor: equal (get-grid grid (transition-to neighbor)) "S"
-        transitions
+        valid
       else
       false
 
-  if loop-closed then
+  if loop-closed  then
     print "Closed the loop after" distance
     return seen
 
   let new-ground =
     filter
       lambda neighbor: not (dict.contains seen (transition-to neighbor))
-      transitions
+      valid
 
-  let valid =
-    filter
-      lambda neighbor: is-successor pipe (transition-direction neighbor)
-      new-ground
-
-  if not valid then
+  if not new-ground then
     print "Dead end"
     return nil
 
@@ -132,13 +325,13 @@ def step-one (grid seen coords)
     let next-seen = dict.set seen next-coords next-distance
     return step-one grid next-seen next-coords
 
-  if equal (list.length valid) 1 then
-    return mover (first valid)
+  if equal (list.length new-ground) 1 then
+    return mover (first new-ground)
 
-  print "Multiple moves" valid
+  print "Multiple moves" new-ground
 
   # Multiple branches!
-  let all-seen = map mover valid
+  let all-seen = map mover new-ground
 
   let minimums =
     functional.fold
