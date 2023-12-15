@@ -117,3 +117,10 @@ def fast-dict-size (collection)
 
 
 export fast-dict-size
+
+
+def fast-dict-contains (collection key)
+  return tree.contains collection key
+
+
+export fast-dict-contains

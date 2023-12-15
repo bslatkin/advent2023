@@ -257,12 +257,12 @@ def minimize-keys (current new)
     functional.fold
       def helper (state item)
         let key value = item
-        let previous = dict.get-or-default state key nil
+        let previous = advent.fast-dict-get-or-default state key nil
         if equal previous nil then
-          return dict.set state key value
+          return advent.fast-dict-set state key value
 
         let lowest = min value previous
-        return dict.set state key lowest
+        return advent.fast-dict-set state key lowest
       dict.items new
       current
 
@@ -270,7 +270,7 @@ def minimize-keys (current new)
 def step-one (grid seen coords)
   let transitions = get-neighbors grid coords
   let pipe = get-grid grid coords
-  let distance = dict.get seen coords
+  let distance = advent.fast-dict-get seen coords
   print "Trying" coords pipe "at" distance
 
   let valid =
@@ -296,7 +296,7 @@ def step-one (grid seen coords)
 
   let new-ground =
     filter
-      lambda neighbor: not (dict.contains seen (transition-to neighbor))
+      lambda neighbor: not (advent.fast-dict-contains seen (transition-to neighbor))
       valid
 
   if not new-ground then
@@ -308,7 +308,7 @@ def step-one (grid seen coords)
     let next-pipe = get-grid grid next-coords
     let next-distance = add distance 1
     print "Moving from" coords pipe "to" next-coords next-pipe
-    let next-seen = dict.set seen next-coords next-distance
+    let next-seen = advent.fast-dict-set seen next-coords next-distance
     return step-one grid next-seen next-coords
 
   if equal (list.length new-ground) 1 then
@@ -323,7 +323,7 @@ def step-one (grid seen coords)
     functional.fold
       minimize-keys
       all-seen
-      (dict.new)
+      (advent.fast-dict-new)
 
   return minimums
 
@@ -341,10 +341,9 @@ def parse-line (y line)
   let codepoints = codepoint-iter line
   let positions =
     functional.map-index
-      lambda x pipe: if not-equal pipe "." then (list (list x y) pipe) else nil
+      lambda x pipe: list (list x y) pipe
       codepoints
-  let valid = filter bool positions
-  return valid
+  return positions
 
 
 def find-start-coords (grid)
@@ -379,18 +378,25 @@ def main (args)
   let result =
     step-one
       grid
-      dict.from (list coords 0)
+      advent.fast-dict-from-list (list (list coords 0))
       coords
 
-  let inverted =
-    map
-    def helper (item)
-      let key value = item
-      return list value key
-    dict.items result
+  """
+  Paint bucket fill from the outside
+  Find every "." character along a border and update the grid to say it's "outside"
+  Find every neighbor and recurse for each one (breadth-first)
 
-  let sorted = sort.sort-with-compare sort.descending inverted
-  let top = first sorted
-  print top
+  If the neighbor is already outside then skip
+
+  If the neighbor is not part of the loop then mark it as outside, find neighbors and recurse
+
+  If a neighbor is part of the loop then don't mark it, but continue going in
+  the same direction until you hit a non-loop grid spot
+
+  Assuming total size - outside marks -  loopsize = inside marks
+
+  """
+
+  print result
 
   return 0
